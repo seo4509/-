@@ -1,1468 +1,402 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>기관사 철도안전 및 열차운행체계 평가 퀴즈 🚄</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Canvas Confetti -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- SheetJS (xlsx) for Excel Export -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Font Awesome Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        body {
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 35%, #e0e7ff 70%, #fae8ff 100%);
-            background-attachment: fixed;
-        }
-
-        .animate-float {
-            animation: float 4s ease-in-out infinite;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-8px) rotate(2deg); }
-        }
-
-        .shake {
-            animation: shake 0.4s ease-in-out;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-10px); }
-            40%, 80% { transform: translateX(10px); }
-        }
-
-        .pop-in {
-            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.92); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.95);
-            box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.15);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관제사 철도 안전퀴즈</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .animate-shake { animation: shake 0.4s ease-in-out; }
+    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white text-slate-800">
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen font-sans text-gray-800">
 
-    <!-- Header Section -->
-    <header class="border-b border-white/60 bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-indigo-600 flex items-center justify-center text-2xl shadow-lg shadow-orange-500/20 text-white animate-float cursor-pointer" onclick="goHome()">
-                    🚅
-                </div>
-                <div>
-                    <h1 class="font-extrabold text-lg md:text-xl text-slate-900 flex items-center gap-2">
-                        <span onclick="goHome()" class="cursor-pointer">기관사 철도안전 퀴즈</span>
-                        <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-sm">열차운행체계</span>
-                    </h1>
-                    <p class="text-xs font-semibold text-slate-500">대구교통공사 / 철도안전관리체계 평가 🎯</p>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <!-- User Info Badge during Quiz -->
-                <div id="user-info-badge" class="hidden flex flex-wrap items-center gap-2 md:gap-3 text-xs bg-indigo-50/90 border border-indigo-100 px-3.5 py-1.5 rounded-2xl shadow-inner font-semibold">
-                    <span class="text-slate-700"><i class="fa-solid fa-id-card text-indigo-500 mr-1"></i>사번: <strong id="display-emp-id" class="text-indigo-900"></strong></span>
-                    <span class="text-slate-300">|</span>
-                    <span class="text-slate-700"><i class="fa-solid fa-user text-emerald-500 mr-1"></i>성명: <strong id="display-emp-name" class="text-emerald-900"></strong></span>
-                    <span class="text-slate-300">|</span>
-                    <span class="text-slate-700"><i class="fa-solid fa-clock text-amber-500 mr-1"></i>시간: <strong id="live-timer" class="text-amber-800 font-mono">00:00</strong></span>
-                </div>
-
-                <!-- Admin Entrance Button -->
-                <button onclick="openAdminModal()" class="bg-gradient-to-r from-slate-800 to-indigo-950 hover:from-slate-700 hover:to-indigo-900 text-white text-xs font-bold py-2 px-3.5 rounded-xl shadow-md transition flex items-center gap-1.5 active:scale-95">
-                    <i class="fa-solid fa-user-shield text-amber-400"></i>
-                    <span class="hidden sm:inline">관리자 모드</span>
-                </button>
-            </div>
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-md shadow-sm border-b border-indigo-100 sticky top-0 z-30">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <div class="bg-indigo-600 text-white p-2 rounded-lg"><i class="fa-solid fa-train"></i></div>
+        <div>
+          <h1 class="font-bold text-lg text-indigo-950">관제사 철도 안전퀴즈</h1>
+          <p class="text-xs text-indigo-500 font-medium">대구교통공사 / 종합관제센터</p>
         </div>
-    </header>
+      </div>
+      <button onclick="openAdminModal()" class="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-semibold rounded-lg flex items-center space-x-1 transition">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>관리자 모드</span>
+      </button>
+    </div>
+  </header>
 
-    <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow flex flex-col justify-center">
+  <!-- Main Container -->
+  <main class="max-w-3xl mx-auto px-4 py-8">
 
-        <!-- 1. LOGIN / START SCREEN -->
-        <section id="login-screen" class="glass-card rounded-3xl p-6 md:p-10 text-center transition-all duration-300 relative overflow-hidden">
-            <div class="absolute -top-16 -left-16 w-40 h-40 bg-pink-300/40 rounded-full blur-2xl pointer-events-none"></div>
-            <div class="absolute -bottom-16 -right-16 w-40 h-40 bg-indigo-300/40 rounded-full blur-2xl pointer-events-none"></div>
-
-            <div class="inline-block p-4 rounded-3xl bg-gradient-to-tr from-amber-100 via-orange-100 to-indigo-100 text-6xl mb-4 shadow-inner">
-                👮‍♂️🏽‍♂️🚆
-            </div>
-            
-            <h2 class="text-2xl md:text-3xl font-black text-slate-900 mb-2">기관사 평가 퀴즈 시작하기</h2>
-            <p class="text-slate-600 text-sm md:text-base mb-8 leading-relaxed max-w-lg mx-auto font-medium">
-                안전운행을 위한 규정 숙지 평가입니다.<br>
-                <strong class="text-indigo-600 font-extrabold">사번</strong>과 <strong class="text-emerald-600 font-extrabold">성명</strong>을 입력하신 후 평가를 시작해주세요.
-                완료 시 점수와 소요시간이 담긴 <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-bold">엑셀 파일이 자동 저장</span> 및 기록됩니다! 📊
-            </p>
-
-            <form id="start-form" onsubmit="startQuiz(event)" class="max-w-md mx-auto space-y-4 text-left relative z-10">
-                <div>
-                    <label for="employee-id-input" class="block text-xs font-bold text-indigo-900 mb-1.5 pl-1 flex items-center gap-1">
-                        <i class="fa-solid fa-id-badge text-indigo-500"></i> 기관사 사번 <span class="text-rose-500">*</span>
-                    </label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-indigo-400">
-                            <i class="fa-solid fa-hashtag"></i>
-                        </span>
-                        <input type="text" id="employee-id-input" required placeholder="예: 20241088"
-                            class="w-full bg-white/90 border-2 border-indigo-100 text-slate-900 font-semibold pl-10 pr-4 py-3.5 rounded-2xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition duration-200 text-sm shadow-sm">
-                    </div>
-                </div>
-
-                <div>
-                    <label for="employee-name-input" class="block text-xs font-bold text-emerald-900 mb-1.5 pl-1 flex items-center gap-1">
-                        <i class="fa-solid fa-user text-emerald-500"></i> 기관사 성명 <span class="text-rose-500">*</span>
-                    </label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-400">
-                            <i class="fa-solid fa-user-pen"></i>
-                        </span>
-                        <input type="text" id="employee-name-input" required placeholder="예: 홍길동"
-                            class="w-full bg-white/90 border-2 border-emerald-100 text-slate-900 font-semibold pl-10 pr-4 py-3.5 rounded-2xl focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 text-sm shadow-sm">
-                    </div>
-                </div>
-
-                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold py-4 px-6 rounded-2xl transition duration-200 shadow-xl shadow-indigo-500/25 flex items-center justify-center gap-2 text-base mt-4 active:scale-95 transform">
-                    <span>퀴즈 평가 시작하기</span>
-                    <i class="fa-solid fa-circle-play text-lg"></i>
-                </button>
-            </form>
-
-            <div class="mt-8 pt-4 border-t border-slate-200/80 text-xs text-slate-500 flex items-center justify-center gap-2 font-medium">
-                <i class="fa-solid fa-shield-check text-emerald-500 text-sm"></i>
-                <span>제출 즉시 점수 및 이력이 관리자 시스템과 엑셀로 기록됩니다.</span>
-            </div>
-        </section>
-
-        <!-- 2. QUIZ SCREEN -->
-        <section id="quiz-screen" class="hidden">
-            <div class="mb-5 glass-card p-4 rounded-2xl shadow-md">
-                <div class="flex justify-between items-center text-sm font-bold text-slate-700 mb-2">
-                    <span id="quiz-progress-text" class="flex items-center gap-1.5">
-                        <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-list-check"></i>
-                        </span>
-                        문제 <span id="current-num" class="text-indigo-600 font-extrabold text-base">1</span> / <span id="total-num">10</span>
-                    </span>
-                    <span id="score-text" class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 shadow-sm">
-                        🏆 현재 점수: <span id="current-score" class="text-emerald-700 font-black text-sm">0</span>점
-                    </span>
-                </div>
-                <div class="w-full bg-slate-200/80 rounded-full h-3 overflow-hidden p-0.5 border border-slate-300/40">
-                    <div id="progress-bar" class="bg-gradient-to-r from-amber-400 via-emerald-400 to-indigo-600 h-2 rounded-full transition-all duration-500 shadow-sm" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div id="quiz-card" class="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden transition-all duration-300">
-                <div class="mb-4 flex items-center justify-between">
-                    <span id="question-source" class="text-xs font-extrabold px-3.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm flex items-center gap-1.5">
-                        📌 출처 불러오는 중...
-                    </span>
-                    <span id="feedback-emoji" class="text-5xl hidden pop-in"></span>
-                </div>
-
-                <h2 id="question-title" class="text-base md:text-lg font-bold text-slate-900 mb-6 leading-snug">
-                    질문을 불러오는 중입니다... ⏳
-                </h2>
-
-                <div id="options-container" class="space-y-3 mb-6">
-                    <!-- Dynamic Options -->
-                </div>
-
-                <div id="explanation-box" class="hidden mt-6 p-5 rounded-2xl border-2 transition-all duration-300 pop-in">
-                    <div class="flex items-start gap-3">
-                        <span id="explanation-icon" class="text-3xl mt-0.5"></span>
-                        <div class="flex-1">
-                            <h4 id="explanation-title" class="font-extrabold text-base mb-1"></h4>
-                            <p id="explanation-text" class="text-xs md:text-sm font-medium leading-relaxed whitespace-pre-line"></p>
-                        </div>
-                    </div>
-                    <button id="next-btn" class="mt-4 w-full bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-white font-extrabold py-3.5 px-4 rounded-xl transition duration-200 shadow-lg flex items-center justify-center gap-2 text-sm">
-                        다음 문제로 이동하기 <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- 3. RESULT SCREEN -->
-        <section id="result-screen" class="hidden glass-card rounded-3xl p-6 md:p-10 text-center relative overflow-hidden pop-in">
-            <div class="text-7xl mb-3 inline-block" id="final-emoji">🏆</div>
-            <h2 class="text-2xl md:text-3xl font-black text-slate-900 mb-1">평가가 완료되었습니다! 🎉</h2>
-            <p class="text-slate-600 mb-6 text-sm font-medium">수고하셨습니다. 성적표가 <strong class="text-emerald-600">관리자 시스템 기록 및 엑셀(.xlsx) 파일로 자동 생성</strong>되었습니다! 📄</p>
-            
-            <div class="bg-white/80 p-6 rounded-2xl border border-indigo-100 shadow-inner mb-6 max-w-md mx-auto grid grid-cols-2 gap-4">
-                <div class="border-r border-slate-200 pr-2 text-left">
-                    <div class="text-slate-400 text-xs font-bold mb-1"><i class="fa-solid fa-id-badge text-indigo-500"></i> 사번</div>
-                    <div id="final-emp-id" class="text-base font-black text-indigo-900 truncate">--</div>
-                </div>
-                <div class="text-left">
-                    <div class="text-slate-400 text-xs font-bold mb-1"><i class="fa-solid fa-user text-emerald-500"></i> 성명</div>
-                    <div id="final-emp-name" class="text-base font-black text-emerald-900 truncate">--</div>
-                </div>
-                <div class="col-span-2 pt-3 border-t border-slate-200/80 text-center">
-                    <div class="text-slate-400 text-xs font-bold mb-1"><i class="fa-solid fa-stopwatch text-amber-500"></i> 총 소요시간</div>
-                    <div id="final-elapsed-time" class="text-lg font-black text-amber-900 font-mono">00초</div>
-                </div>
-                <div class="col-span-2 pt-3 border-t border-slate-200/80">
-                    <div class="text-slate-400 text-xs font-bold mb-1">최종 평가 점수</div>
-                    <div class="text-4xl font-black text-indigo-600 mb-1"><span id="final-score">0</span> <span class="text-base text-slate-400 font-bold">/ 100점</span></div>
-                    <div id="score-grade" class="text-sm font-black text-indigo-900 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 inline-block mt-1">평가 진행 중...</div>
-                </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-                <button id="download-excel-btn" onclick="exportToExcel()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold py-3.5 px-6 rounded-2xl transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 text-sm active:scale-95">
-                    <i class="fa-solid fa-file-excel text-lg"></i> 엑셀 파일 다운로드
-                </button>
-                <button onclick="restartApp()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold py-3.5 px-6 rounded-2xl transition border border-slate-300 flex items-center justify-center gap-2 text-sm active:scale-95">
-                    <i class="fa-solid fa-rotate-left"></i> 처음으로 돌아가기
-                </button>
-            </div>
-        </section>
-
-        <!-- 4. ADMIN DASHBOARD SCREEN -->
-        <section id="admin-screen" class="hidden pop-in space-y-6">
-            <!-- Admin Top Bar -->
-            <div class="glass-card rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <span class="px-3 py-1 rounded-lg bg-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-wider mb-1 inline-block">Admin Panel</span>
-                    <h2 class="text-2xl font-black text-slate-900 flex items-center gap-2">
-                        <i class="fa-solid fa-chart-pie text-indigo-600"></i> 기관사 평가 관리자 모드
-                    </h2>
-                    <p class="text-xs font-semibold text-slate-500 mt-0.5">전체 기관사의 응시 이력, 통계, 개별 성적 및 문제 은행을 종합 관리합니다.</p>
-                </div>
-                <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                    <button onclick="openChangePassModal()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold py-2.5 px-3.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-md">
-                        <i class="fa-solid fa-key"></i> 암호 변경
-                    </button>
-                    <button onclick="exportAllToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold py-2.5 px-3.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-md">
-                        <i class="fa-solid fa-file-excel text-sm"></i> 전체 결과 엑셀 추출
-                    </button>
-                    <button onclick="closeAdminScreen()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-extrabold py-2.5 px-3.5 rounded-xl transition flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-xmark"></i> 나가기
-                    </button>
-                </div>
-            </div>
-
-            <!-- Analytics Overview Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="glass-card rounded-2xl p-4 text-left border-l-4 border-indigo-500">
-                    <div class="text-xs font-bold text-slate-400 mb-1 flex items-center gap-1">
-                        <i class="fa-solid fa-users text-indigo-500"></i> 총 응시자 수
-                    </div>
-                    <div id="admin-stat-total" class="text-2xl font-black text-slate-900">0명</div>
-                </div>
-                <div class="glass-card rounded-2xl p-4 text-left border-l-4 border-emerald-500">
-                    <div class="text-xs font-bold text-slate-400 mb-1 flex items-center gap-1">
-                        <i class="fa-solid fa-chart-line text-emerald-500"></i> 평균 평가 점수
-                    </div>
-                    <div id="admin-stat-avg" class="text-2xl font-black text-emerald-700">0점</div>
-                </div>
-                <div class="glass-card rounded-2xl p-4 text-left border-l-4 border-amber-500">
-                    <div class="text-xs font-bold text-slate-400 mb-1 flex items-center gap-1">
-                        <i class="fa-solid fa-award text-amber-500"></i> 최고 점수
-                    </div>
-                    <div id="admin-stat-max" class="text-2xl font-black text-amber-700">0점</div>
-                </div>
-                <div class="glass-card rounded-2xl p-4 text-left border-l-4 border-purple-500">
-                    <div class="text-xs font-bold text-slate-400 mb-1 flex items-center gap-1">
-                        <i class="fa-solid fa-hourglass-half text-purple-500"></i> 평균 소요시간
-                    </div>
-                    <div id="admin-stat-time" class="text-2xl font-black text-purple-800 font-mono">00:00</div>
-                </div>
-            </div>
-
-            <!-- Admin Navigation Tabs -->
-            <div class="flex border-b border-slate-300/80 gap-2">
-                <button id="tab-records-btn" onclick="switchAdminTab('records')" class="py-2.5 px-4 font-extrabold text-sm border-b-2 border-indigo-600 text-indigo-700 flex items-center gap-2 transition">
-                    <i class="fa-solid fa-rectangle-list"></i> 응시자 기록 목록 (<span id="record-count-badge">0</span>)
-                </button>
-                <button id="tab-questions-btn" onclick="switchAdminTab('questions')" class="py-2.5 px-4 font-extrabold text-sm text-slate-500 hover:text-slate-800 flex items-center gap-2 transition border-b-2 border-transparent">
-                    <i class="fa-solid fa-book-open"></i> 문제 은행 관리 및 업데이트 (<span id="question-count-badge">10</span>)
-                </button>
-            </div>
-
-            <!-- TAB 1: Records Table -->
-            <div id="admin-tab-records" class="glass-card rounded-2xl p-4 md:p-6 space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-200">
-                    <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                        <i class="fa-solid fa-list-check text-indigo-600"></i> 기관사 평가 결과 목록
-                    </h3>
-                    <div class="relative w-full sm:w-64">
-                        <input type="text" id="admin-search-input" onkeyup="renderAdminTable()" placeholder="사번 또는 성명 검색..."
-                            class="w-full bg-white border border-slate-200 font-semibold pl-9 pr-3 py-2 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto rounded-xl border border-slate-200/80 bg-white">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-100/80 text-slate-600 font-extrabold border-b border-slate-200">
-                            <tr>
-                                <th class="p-3.5">평가 일시</th>
-                                <th class="p-3.5">사번</th>
-                                <th class="p-3.5">성명</th>
-                                <th class="p-3.5">소요시간</th>
-                                <th class="p-3.5">점수</th>
-                                <th class="p-3.5">평가 등급</th>
-                                <th class="p-3.5 text-center">상세 보기</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-records-tbody" class="divide-y divide-slate-100 font-semibold">
-                            <!-- Injected by JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- TAB 2: Questions Viewer & Manager -->
-            <div id="admin-tab-questions" class="hidden glass-card rounded-2xl p-4 md:p-6 space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-200">
-                    <div>
-                        <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                            <i class="fa-solid fa-list-ol text-indigo-600"></i> 현재 문제은행 목록 및 관리
-                        </h3>
-                        <p class="text-xs text-slate-500 font-medium mt-0.5">새 문제를 직접 추가하거나 JSON 백업/업로드를 통해 문제 데이터를 간편하게 업데이트할 수 있습니다.</p>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                        <button onclick="openAddQuestionModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold py-2 px-3 rounded-xl transition flex items-center gap-1 shadow-sm">
-                            <i class="fa-solid fa-plus"></i> 새 문제 추가
-                        </button>
-                        <button onclick="exportQuestionsJSON()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-extrabold py-2 px-3 rounded-xl transition flex items-center gap-1">
-                            <i class="fa-solid fa-download"></i> JSON 내보내기
-                        </button>
-                        <label class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-extrabold py-2 px-3 rounded-xl transition flex items-center gap-1 cursor-pointer">
-                            <i class="fa-solid fa-upload"></i> JSON 불러오기
-                            <input type="file" id="json-upload-input" accept=".json" onchange="importQuestionsJSON(event)" class="hidden">
-                        </label>
-                        <button onclick="resetQuestionsToDefault()" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold py-2 px-3 rounded-xl transition flex items-center gap-1">
-                            <i class="fa-solid fa-rotate-left"></i> 기본 문제 복원
-                        </button>
-                    </div>
-                </div>
-
-                <div id="admin-questions-list" class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
-                    <!-- Injected JS -->
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Modals Section -->
-    
-    <!-- Admin Authentication Password Modal -->
-    <div id="admin-auth-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-card rounded-3xl p-6 max-w-sm w-full pop-in relative text-center">
-            <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-xl mb-3 shadow-inner">
-                <i class="fa-solid fa-lock"></i>
-            </div>
-            <h3 class="text-lg font-black text-slate-900 mb-1">관리자 인증</h3>
-            <p class="text-xs text-slate-500 mb-4 font-semibold">관리자 비밀번호를 입력해주세요. (기본: 1234)</p>
-
-            <form onsubmit="verifyAdminPassword(event)" class="space-y-3 text-left text-xs">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">비밀번호</label>
-                    <input type="password" id="admin-pass-input" required placeholder="비밀번호 입력"
-                        class="w-full bg-white border border-slate-200 font-semibold p-2.5 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="closeAdminModal()" class="flex-1 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition">취소</button>
-                    <button type="submit" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl hover:bg-indigo-700 transition shadow-md">인증하기</button>
-                </div>
-            </form>
+    <!-- Screen 1: 사번/성명 입력 Screen -->
+    <div id="start-screen" class="glass-card rounded-2xl p-8 shadow-xl border border-white/50 text-center">
+      <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+        🚆
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-1">관제사 철도 안전퀴즈</h2>
+      <p class="text-xs font-bold text-indigo-600 mb-6">대구교통공사 / 종합관제센터</p>
+      
+      <div class="max-w-xs mx-auto space-y-4 text-left">
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">사번</label>
+          <input type="text" id="emp-id" placeholder="예: 20260101" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
         </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">성명</label>
+          <input type="text" id="emp-name" placeholder="예: 홍길동" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+        </div>
+        <button onclick="startQuiz()" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition text-sm">
+          퀴즈 시작하기 🚀
+        </button>
+      </div>
     </div>
 
-    <!-- Password Change Modal -->
-    <div id="admin-changepass-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-card rounded-3xl p-6 max-w-sm w-full pop-in relative text-center">
-            <button onclick="closeChangePassModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto text-xl mb-3 shadow-inner">
-                <i class="fa-solid fa-key"></i>
-            </div>
-            <h3 class="text-lg font-black text-slate-900 mb-1">비밀번호 변경</h3>
-            <p class="text-xs text-slate-500 mb-4 font-semibold">새로 사용할 관리자 비밀번호를 입력해 주세요.</p>
-
-            <form onsubmit="saveNewAdminPassword(event)" class="space-y-3 text-left text-xs">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">현재 비밀번호</label>
-                    <input type="password" id="curr-pass-input" required placeholder="현재 비밀번호"
-                        class="w-full bg-white border border-slate-200 font-semibold p-2.5 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">새 비밀번호</label>
-                    <input type="password" id="new-pass-input" required placeholder="새 비밀번호 입력"
-                        class="w-full bg-white border border-slate-200 font-semibold p-2.5 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">새 비밀번호 확인</label>
-                    <input type="password" id="confirm-pass-input" required placeholder="새 비밀번호 재입력"
-                        class="w-full bg-white border border-slate-200 font-semibold p-2.5 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="closeChangePassModal()" class="flex-1 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition">취소</button>
-                    <button type="submit" class="flex-1 py-2.5 bg-amber-500 text-white font-extrabold rounded-xl hover:bg-amber-600 transition shadow-md">변경 완료</button>
-                </div>
-            </form>
+    <!-- Screen 2: Quiz Screen -->
+    <div id="quiz-screen" class="hidden space-y-6">
+      <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-indigo-50">
+        <div>
+          <span id="user-badge" class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md"></span>
+          <span class="text-xs text-gray-500 ml-2" id="quiz-progress-text">문제 1 / 10</span>
         </div>
+        <div class="flex items-center space-x-1 text-sm font-semibold text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
+          <i class="fa-regular fa-clock"></i>
+          <span id="timer-text">00:00</span>
+        </div>
+      </div>
+
+      <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+        <div id="progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-300"></div>
+      </div>
+
+      <div id="question-card" class="glass-card rounded-2xl p-6 shadow-xl border border-white/50 space-y-4">
+        <span id="q-source" class="inline-block text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded"></span>
+        <h3 id="q-title" class="text-base font-bold text-gray-900 leading-relaxed"></h3>
+
+        <div id="options-container" class="space-y-2 pt-2"></div>
+
+        <!-- Correct/Incorrect Feedback Box -->
+        <div id="feedback-box" class="hidden p-4 rounded-xl text-sm leading-relaxed border mt-4">
+          <div id="feedback-header" class="font-bold flex items-center space-x-2 mb-1"></div>
+          <div id="feedback-desc" class="text-gray-700 text-xs"></div>
+        </div>
+
+        <div class="flex justify-end pt-4">
+          <button id="next-btn" onclick="nextQuestion()" class="hidden px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition">
+            다음 문제 <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Question Add/Edit Modal -->
-    <div id="admin-question-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-card rounded-3xl p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto pop-in relative text-left">
-            <button onclick="closeQuestionModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <h3 id="question-modal-title" class="text-lg font-black text-slate-900 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-pen-to-square text-indigo-600"></i> 문제 추가/수정
-            </h3>
+    <!-- Screen 3: Result Screen -->
+    <div id="result-screen" class="hidden glass-card rounded-2xl p-8 shadow-xl border border-white/50 text-center space-y-6">
+      <div id="result-icon" class="text-6xl">🎉</div>
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900">퀴즈가 완료되었습니다!</h2>
+        <p class="text-sm text-gray-600 mt-1" id="result-summary"></p>
+      </div>
 
-            <form onsubmit="saveQuestionForm(event)" class="space-y-3.5 text-xs">
-                <input type="hidden" id="modal-question-index" value="-1">
-
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">출처 / 규정 위치</label>
-                    <input type="text" id="modal-q-source" required placeholder="예: 철도안전관리체계 P74~75"
-                        class="w-full bg-white border border-slate-200 font-semibold p-2.5 rounded-xl focus:outline-none focus:border-indigo-500">
-                </div>
-
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">질문 내용</label>
-                    <textarea id="modal-q-title" required rows="2" placeholder="문제 질문을 입력하세요"
-                        class="w-full bg-white border border-slate-200 font-semibold p-2.5 rounded-xl focus:outline-none focus:border-indigo-500"></textarea>
-                </div>
-
-                <div class="space-y-2">
-                    <label class="block font-bold text-slate-700">보기 항목 (1번~5번)</label>
-                    <input type="text" id="modal-opt-0" required placeholder="① 보기 1번 입력" class="w-full bg-white border border-slate-200 font-medium p-2 rounded-xl">
-                    <input type="text" id="modal-opt-1" required placeholder="② 보기 2번 입력" class="w-full bg-white border border-slate-200 font-medium p-2 rounded-xl">
-                    <input type="text" id="modal-opt-2" required placeholder="③ 보기 3번 입력" class="w-full bg-white border border-slate-200 font-medium p-2 rounded-xl">
-                    <input type="text" id="modal-opt-3" required placeholder="④ 보기 4번 입력" class="w-full bg-white border border-slate-200 font-medium p-2 rounded-xl">
-                    <input type="text" id="modal-opt-4" required placeholder="⑤ 보기 5번 입력" class="w-full bg-white border border-slate-200 font-medium p-2 rounded-xl">
-                </div>
-
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">정답 선택</label>
-                    <select id="modal-q-answer" class="w-full bg-white border border-slate-200 font-bold p-2.5 rounded-xl focus:outline-none focus:border-indigo-500">
-                        <option value="0">①번 정답</option>
-                        <option value="1">②번 정답</option>
-                        <option value="2">③번 정답</option>
-                        <option value="3">④번 정답</option>
-                        <option value="4">⑤번 정답</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">정답 해설</label>
-                    <textarea id="modal-q-explanation" required rows="3" placeholder="해설을 입력하세요"
-                        class="w-full bg-white border border-slate-200 font-medium p-2.5 rounded-xl focus:outline-none focus:border-indigo-500"></textarea>
-                </div>
-
-                <div class="pt-2 flex justify-end gap-2">
-                    <button type="button" onclick="closeQuestionModal()" class="px-4 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition">취소</button>
-                    <button type="submit" class="px-5 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl hover:bg-indigo-700 transition shadow-md">저장하기</button>
-                </div>
-            </form>
+      <div class="grid grid-cols-3 gap-3 max-w-md mx-auto">
+        <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+          <p class="text-xs text-gray-500">최종 점수</p>
+          <p class="text-xl font-black text-indigo-600" id="res-score">0점</p>
         </div>
+        <div class="bg-purple-50 p-3 rounded-xl border border-purple-100">
+          <p class="text-xs text-gray-500">소요 시간</p>
+          <p class="text-xl font-black text-purple-600" id="res-time">00:00</p>
+        </div>
+        <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+          <p class="text-xs text-gray-500">정답률</p>
+          <p class="text-xl font-black text-emerald-600" id="res-accuracy">0%</p>
+        </div>
+      </div>
+
+      <div class="pt-2 flex justify-center space-x-3">
+        <button onclick="downloadExcel()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm shadow transition flex items-center space-x-1.5">
+          <i class="fa-solid fa-file-excel"></i>
+          <span>결과 엑셀 저장</span>
+        </button>
+        <button onclick="location.reload()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm shadow transition">
+          다시 풀기
+        </button>
+      </div>
     </div>
 
-    <!-- Record Details Modal -->
-    <div id="admin-detail-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="glass-card rounded-3xl p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto pop-in relative">
-            <button onclick="closeDetailModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <h3 class="text-lg font-black text-slate-900 mb-1 flex items-center gap-2">
-                <i class="fa-solid fa-id-card text-indigo-600"></i> 기관사 개별 평가 상세 리포트
-            </h3>
-            <div id="detail-modal-summary" class="my-3 p-3.5 bg-indigo-50/80 rounded-xl border border-indigo-100 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold">
-                <!-- Injected JS -->
-            </div>
-            <div class="space-y-3 mt-4 text-xs" id="detail-modal-questions">
-                <!-- Injected JS -->
-            </div>
-        </div>
+  </main>
+
+  <!-- Admin Password Auth Modal -->
+  <div id="admin-auth-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl space-y-4">
+      <div class="text-center">
+        <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl"><i class="fa-solid fa-lock"></i></div>
+        <h3 class="font-bold text-gray-900">관리자 인증</h3>
+        <p class="text-xs text-gray-500">관리자 비밀번호를 입력하세요. (기본: 1234)</p>
+      </div>
+      <input type="password" id="admin-pass-input" placeholder="비밀번호" class="w-full px-3 py-2 border rounded-lg text-sm text-center">
+      <div class="flex space-x-2">
+        <button onclick="closeAdminAuthModal()" class="w-1/2 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg">취소</button>
+        <button onclick="verifyAdminPass()" class="w-1/2 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg">확인</button>
+      </div>
     </div>
-
-    <footer class="border-t border-white/60 bg-white/60 backdrop-blur-md py-4 text-center text-xs text-slate-500 font-semibold">
-        <p>기관사 철도안전관리체계 & 열차운행체계 교육 평가 시스템 🚇</p>
-        <p class="mt-1 text-slate-400">안전제일! 규정을 준수하여 철도 안전 운행을 만들어갑니다. ❤️</p>
-    </footer>
-
-    <!-- JavaScript Application Logic -->
-    <script>
-        const DEFAULT_ADMIN_PASS = "1234";
-
-        function getAdminPassword() {
-            try {
-                return localStorage.getItem("railway_admin_password") || DEFAULT_ADMIN_PASS;
-            } catch (e) {
-                return DEFAULT_ADMIN_PASS;
-            }
-        }
-
-        function setAdminPassword(newPass) {
-            try {
-                localStorage.setItem("railway_admin_password", newPass);
-            } catch (e) {
-                console.error("Failed to save new password to LocalStorage", e);
-            }
-        }
-
-        const defaultQuizData = [
-            {
-                id: 1,
-                source: "철도안전관리체계 P74~75",
-                question: "다음 중 열차운행체계의 용어 정의로 틀린 것은? 🛑",
-                options: [
-                    "① “운행관리원”이라 함은 3호선 전동차에 승차하여 차내 승객안내 및 비상 시 열차운전 업무에 종사하는 직원을 말한다.",
-                    "② “교번”이라 함은 기관사가 근무하여야 할 시간을 일정한 순서에 따르도록 지정한 것을 말한다.",
-                    "③ “철도차량”이라 함은 선로를 운행할 목적으로 제작된 동력차, 객차 및 특수차를 말한다.",
-                    "④ “역 순회요원”이라 함은 담당역에 상주하여 해당 역사를 순회하며 역구내 승객안내 및 설비 관리 등 역 운영에 관한 전반적인 안전관리를 담당하는 직원을 말한다.",
-                    "⑤ “차량기지”라 함은 차량의 정비, 검수 및 유치를 위한 장소를 말한다."
-                ],
-                answer: 3,
-                explanation: "④번 설명 오류! “역 순회요원”은 '담당역에 상주'하는 것이 아니라, 관리역별 담당구간의 각 역을 순회하면서 역구내 승객안내 및 설비 관리 등 역 운영에 관한 전반적인 안전관리를 담당하는 직원을 말합니다. 🚶‍♂️🏢"
-            },
-            {
-                id: 2,
-                source: "철도안전관리체계 P75~76",
-                question: "다음 용어 중 설명이 틀린 것은? 🚨",
-                options: [
-                    "① “운전관제”라 함은 도시철도의 안전운행을 위하여 열차의 운행을 집중 제어·감시·통제하거나 각종 설비와 시스템 운용에 관한 지시와 통제를 담당하는 곳을 말한다.",
-                    "② “폐색준용법”이라 함은 상용 또는 대용폐색방식의 시행이 불가능할 때 열차 또는 차량의 운전을 위하여 폐색방식에 준용하여 시행하는 운전보안방식을 말한다.",
-                    "③ “운전취급자”라 함은 차량기지 또는 운전취급역에서 열차 또는 차량운행에 필요한 신호 및 진로를 조작하는 자를 말한다.",
-                    "④ “작업자”라 함은 유지보수 및 점검 등을 위하여 지정된 현장에서 작업을 하는 자를 말한다.",
-                    "⑤ “감독자”라 함은 공사 직원으로서 시공사 및 용역업체의 직원을 지휘·감독하는 자를 말한다."
-                ],
-                answer: 0,
-                explanation: "①번 오류! 정의에서 설명하는 장소는 '운전관제'가 아니라 “철도관제”에 해당합니다. 📡🎛️"
-            },
-            {
-                id: 3,
-                source: "철도안전관리체계 P93",
-                question: "다음은 직원에 대한 음주 제한 기준이다. 괄호 안에 들어갈 숫자로 맞게 짝지어진 것은? 🍺🚫\n\n『직원에 대한 음주 제한의 기준은 혈중알콜농도 ( % ) 이상으로 하며, ( % ) 이상을 만취 상태로 본다.』",
-                options: [
-                    "① 0.03, 0.1",
-                    "② 0.02, 0.05",
-                    "③ 0.03, 0.9",
-                    "④ 0.03, 0.5",
-                    "⑤ 0.02, 0.1"
-                ],
-                answer: 4,
-                explanation: "⑤번 정답! 직원에 대한 음주 제한의 기준은 혈중알콜농도 0.02% 이상이며, 0.1% 이상을 만취 상태로 봅니다. 음주운전 절대 금지! 🛑🍷"
-            },
-            {
-                id: 4,
-                source: "철도안전관리체계 P94",
-                question: "열차운전업무를 수행하는 기관사 및 운행관리원의 과로 관리를 위해, 사업종료 후 부여해야 하는 최소 휴양시간은 얼마인가? ⏰😴",
-                options: [
-                    "① 8시간 이상",
-                    "② 10시간 이상",
-                    "③ 12시간 이상",
-                    "④ 14시간 이상",
-                    "⑤ 24시간 이상"
-                ],
-                answer: 2,
-                explanation: "③번 정답! 기관사 및 운행관리원의 과로 관리를 위해 교번 순서를 정할 때 휴양시간이 12시간을 넘도록 정하며, 사업종료 후 최소 12시간 이상의 휴양시간을 부여해야 합니다. 🛌💤"
-            },
-            {
-                id: 5,
-                source: "철도안전관리체계 P98",
-                question: "운전 및 관제업무 종사자가 50세 이상인 경우, 최초검사 후 적성검사를 받아야 하는 정기 주기(연)는? 🩺🔍",
-                options: [
-                    "① 1년마다",
-                    "② 2년마다",
-                    "③ 3년마다",
-                    "④ 4년마다",
-                    "⑤ 5년마다"
-                ],
-                answer: 4,
-                explanation: "⑤번 정답! 운전 및 관제업무 종사자의 적성검사 정기검사 주기는 최초 검사 후 10년이며, 50세 이상인 경우에는 5년마다 실시합니다. (참고: 신체검사는 2년마다 시행) 👨‍⚕️📋"
-            },
-            {
-                id: 6,
-                source: "철도안전교육평가 기출문제",
-                question: "상용폐색방식을 시행할 수 없는 경우 대용폐색방식을 시행하게 됩니다. 복선 운전 시 대용폐색방식으로 옳은 것은? 🚦🚃",
-                options: [
-                    "① 통신식 또는 지도통신식",
-                    "② 지령식 또는 통신식",
-                    "③ 지령식 또는 지도통신식",
-                    "④ 전령법 또는 통신식",
-                    "⑤ 자동폐색식 또는 지령식"
-                ],
-                answer: 1,
-                explanation: "②번 정답! 상용폐색방식을 시행할 수 없을 때 복선 운전 시에는 '지령식' 또는 '통신식'을 시행하고, 단선 운전 및 반대선 운전 시에는 '지령식' 또는 '지도통신식'을 시행합니다. 🛤️📡"
-            },
-            {
-                id: 7,
-                source: "철도안전관리체계 P125~126",
-                question: "다음 중 철도차량 또는 열차운행의 일시 중지가 필요한 지장 사유가 아닌 것은? ⚠️💥",
-                options: [
-                    "① 철도사고 발생 우려 또는 2차 사고 발생 우려 시",
-                    "② 역 또는 시설물 등에 화재가 발생한 경우",
-                    "③ 선로 또는 전차선로의 고장을 발견할 때",
-                    "④ 선로가 침수되었거나 지진이 발생했을 때",
-                    "⑤ 화재경보기가 단순 동작(오작동)하였을 때"
-                ],
-                answer: 4,
-                explanation: "⑤번 정답! 화재경보기가 동작한 단순 사실만으로는 운행 일시 중지 사유에 포함되지 않습니다. 실제 화재 발생, 선로/전차선 고장, 침수, 지진 등이 직접적 운행 중지 지장 사유입니다. 🚒🔥"
-            },
-            {
-                id: 8,
-                source: "철도안전교육평가 기출문제",
-                question: "지상구간 운행 중 풍속이 매초 20m 이상 25m 미만일 때 적용하는 기관사의 조치사항은? 🌬️🌀",
-                options: [
-                    "① 매시 40km 이하의 속도로 주의운전",
-                    "② 매시 25km 이하의 속도로 주의운전",
-                    "③ 매시 15km 이하의 속도로 주의운전",
-                    "④ 즉시 열차 운전 중지 및 정차",
-                    "⑤ 정상속도 운행 후 관제 보고"
-                ],
-                answer: 0,
-                explanation: "①번 정답! 지상구간 운전 시 풍속이 20m/s 이상 ~ 25m/s 미만인 경우 '매시 40km 이하의 속도로 주의운전'을 시행해야 합니다. 🍃🚆"
-            },
-            {
-                id: 9,
-                source: "철도안전교육평가 기출문제",
-                question: "VVVF는 정상이나 TCMS 고장으로 견인력 및 제동값을 인버터 및 제어장치로 전송할 수 없을 때 사용하는 비상 운전모드는? 🎛️⚡",
-                options: [
-                    "① YARD 모드",
-                    "② ROS 모드",
-                    "③ EO 모드",
-                    "④ 비상운전 모드",
-                    "⑤ AUTO 모드"
-                ],
-                answer: 2,
-                explanation: "③번 정답! VVVF 인버터는 정상이나 TCMS 고장 시 구원/자차 비상 운전을 위해 'EO 모드(Emergency Operation Mode)'를 사용합니다. 🛠️⚡"
-            },
-            {
-                id: 10,
-                source: "철도안전교육평가 기출문제",
-                question: "차량 정비기지(차량기지)에서 열차 출발 전 국토교통부령으로 정하는 운전업무종사자의 준수사항으로 옳지 않은 것은? 🏭🔍",
-                options: [
-                    "① 운전제어와 관련된 장치의 기능을 점검할 것",
-                    "② 제동장치 기능을 확인할 것",
-                    "③ 철도차량이 역시설에서 출발하는 경우 여객의 승하차여부를 확인할 것",
-                    "④ 열차 방호용품의 점검을 생략하고 관제 보고로 대체할 것",
-                    "⑤ 비상제동 및 주요 보안 설비 동작 유무를 확인할 것"
-                ],
-                answer: 3,
-                explanation: "④번 오류! 열차 출발 전 필수 점검 항목인 열차 방호용품 확인을 생략하거나 관제 보고로 대체할 수 없으며 반드시 직접 점검·확인하여야 합니다. 🧯🔦"
-            }
-        ];
-
-        function getStoredQuizData() {
-            try {
-                const stored = localStorage.getItem("railway_quiz_questions");
-                return stored ? JSON.parse(stored) : defaultQuizData;
-            } catch (e) {
-                return defaultQuizData;
-            }
-        }
-
-        function saveQuizData(questions) {
-            try {
-                localStorage.setItem("railway_quiz_questions", JSON.stringify(questions));
-            } catch (e) {
-                console.error("Failed to save questions to LocalStorage", e);
-            }
-        }
-
-        let quizData = getStoredQuizData();
-        let employeeId = "";
-        let employeeName = "";
-        let currentQuestionIndex = 0;
-        let score = 0;
-        let answered = false;
-        let timerInterval = null;
-        let totalElapsedSeconds = 0;
-        let userAnswersLog = [];
-
-        // DOM elements
-        const loginScreen = document.getElementById("login-screen");
-        const quizScreen = document.getElementById("quiz-screen");
-        const resultScreen = document.getElementById("result-screen");
-        const adminScreen = document.getElementById("admin-screen");
-        const userInfoBadge = document.getElementById("user-info-badge");
-        const displayEmpId = document.getElementById("display-emp-id");
-        const displayEmpName = document.getElementById("display-emp-name");
-        const liveTimer = document.getElementById("live-timer");
-
-        const questionSourceEl = document.getElementById("question-source");
-        const questionTitleEl = document.getElementById("question-title");
-        const optionsContainerEl = document.getElementById("options-container");
-        const currentNumEl = document.getElementById("current-num");
-        const totalNumEl = document.getElementById("total-num");
-        const currentScoreEl = document.getElementById("current-score");
-        const progressBarEl = document.getElementById("progress-bar");
-        const explanationBoxEl = document.getElementById("explanation-box");
-        const explanationTitleEl = document.getElementById("explanation-title");
-        const explanationTextEl = document.getElementById("explanation-text");
-        const explanationIconEl = document.getElementById("explanation-icon");
-        const nextBtnEl = document.getElementById("next-btn");
-        const feedbackEmojiEl = document.getElementById("feedback-emoji");
-        const quizCardEl = document.getElementById("quiz-card");
-
-        // Helper functions
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-        }
-
-        function startTimer() {
-            totalElapsedSeconds = 0;
-            liveTimer.textContent = "00:00";
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                totalElapsedSeconds++;
-                liveTimer.textContent = formatTime(totalElapsedSeconds);
-            }, 1000);
-        }
-
-        function stopTimer() {
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-        }
-
-        function triggerConfetti() {
-            if (typeof confetti === 'function') {
-                confetti({
-                    particleCount: 100,
-                    spread: 80,
-                    origin: { y: 0.6 }
-                });
-            }
-        }
-
-        function getStoredRecords() {
-            try {
-                const data = localStorage.getItem("railway_quiz_records");
-                return data ? JSON.parse(data) : [];
-            } catch (e) {
-                console.error("Storage read error", e);
-                return [];
-            }
-        }
-
-        function saveRecord(record) {
-            const records = getStoredRecords();
-            records.unshift(record); // put newest first
-            try {
-                localStorage.setItem("railway_quiz_records", JSON.stringify(records));
-            } catch (e) {
-                console.error("Storage save error", e);
-            }
-        }
-
-        function startQuiz(event) {
-            event.preventDefault();
-            const idVal = document.getElementById("employee-id-input").value.trim();
-            const nameVal = document.getElementById("employee-name-input").value.trim();
-            
-            if (!idVal || !nameVal) return;
-
-            employeeId = idVal;
-            employeeName = nameVal;
-            
-            displayEmpId.textContent = employeeId;
-            displayEmpName.textContent = employeeName;
-            
-            hideAllScreens();
-            quizScreen.classList.remove("hidden");
-            userInfoBadge.classList.remove("hidden");
-
-            currentQuestionIndex = 0;
-            score = 0;
-            userAnswersLog = [];
-
-            startTimer();
-            loadQuestion();
-        }
-
-        function loadQuestion() {
-            answered = false;
-            const currentQuiz = quizData[currentQuestionIndex];
-
-            quizCardEl.classList.remove("shake");
-            explanationBoxEl.classList.add("hidden");
-            feedbackEmojiEl.classList.add("hidden");
-            feedbackEmojiEl.textContent = "";
-
-            currentNumEl.textContent = currentQuestionIndex + 1;
-            totalNumEl.textContent = quizData.length;
-            currentScoreEl.textContent = score;
-            questionSourceEl.textContent = `📌 ${currentQuiz.source}`;
-            questionTitleEl.textContent = currentQuiz.question;
-
-            const progressPercent = (currentQuestionIndex / quizData.length) * 100;
-            progressBarEl.style.width = `${progressPercent}%`;
-
-            optionsContainerEl.innerHTML = "";
-            currentQuiz.options.forEach((optionText, index) => {
-                const optionBtn = document.createElement("button");
-                optionBtn.className = "w-full text-left p-4 rounded-2xl border-2 border-slate-200/80 bg-white/90 hover:bg-indigo-50/80 hover:border-indigo-400 text-slate-800 font-semibold transition duration-200 flex items-start gap-3.5 text-sm md:text-base cursor-pointer shadow-sm";
-                optionBtn.innerHTML = `
-                    <span class="w-7 h-7 rounded-xl bg-slate-100 text-slate-600 border border-slate-300 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">${index + 1}</span>
-                    <span class="leading-relaxed">${optionText}</span>
-                `;
-                optionBtn.onclick = () => selectOption(index);
-                optionsContainerEl.appendChild(optionBtn);
-            });
-        }
-
-        function selectOption(selectedIndex) {
-            if (answered) return;
-            answered = true;
-
-            const currentQuiz = quizData[currentQuestionIndex];
-            const isCorrect = selectedIndex === currentQuiz.answer;
-            const optionButtons = optionsContainerEl.querySelectorAll("button");
-
-            userAnswersLog.push({
-                questionNum: currentQuestionIndex + 1,
-                questionText: currentQuiz.question.replace(/\n/g, " "),
-                selectedOption: currentQuiz.options[selectedIndex],
-                correctOption: currentQuiz.options[currentQuiz.answer],
-                isCorrect: isCorrect ? "정답" : "오답"
-            });
-
-            optionButtons.forEach(btn => {
-                btn.disabled = true;
-                btn.classList.remove("hover:bg-indigo-50/80", "hover:border-indigo-400");
-                btn.classList.add("cursor-default");
-            });
-
-            if (isCorrect) {
-                score += 10;
-                currentScoreEl.textContent = score;
-
-                optionButtons[selectedIndex].classList.remove("bg-white/90", "border-slate-200/80");
-                optionButtons[selectedIndex].classList.add("bg-emerald-500", "border-emerald-600", "text-white");
-                optionButtons[selectedIndex].querySelector("span").classList.add("bg-emerald-600", "text-white", "border-emerald-700");
-
-                feedbackEmojiEl.textContent = "🎉";
-                feedbackEmojiEl.classList.remove("hidden");
-                
-                explanationBoxEl.className = "mt-6 p-5 rounded-2xl border-2 border-emerald-300 bg-emerald-50/90 text-emerald-900 pop-in";
-                explanationIconEl.textContent = "✅";
-                explanationTitleEl.textContent = "정답입니다! 완벽합니다! 🎊";
-                explanationTextEl.textContent = currentQuiz.explanation;
-
-                triggerConfetti();
-            } else {
-                quizCardEl.classList.add("shake");
-                
-                optionButtons[selectedIndex].classList.remove("bg-white/90", "border-slate-200/80");
-                optionButtons[selectedIndex].classList.add("bg-rose-500", "border-rose-600", "text-white");
-                optionButtons[selectedIndex].querySelector("span").classList.add("bg-rose-600", "text-white", "border-rose-700");
-
-                optionButtons[currentQuiz.answer].classList.remove("bg-white/90", "border-slate-200/80");
-                optionButtons[currentQuiz.answer].classList.add("bg-emerald-100", "border-emerald-400", "text-emerald-900");
-
-                feedbackEmojiEl.textContent = "😅";
-                feedbackEmojiEl.classList.remove("hidden");
-
-                explanationBoxEl.className = "mt-6 p-5 rounded-2xl border-2 border-rose-300 bg-rose-50/90 text-rose-900 pop-in";
-                explanationIconEl.textContent = "😢";
-                explanationTitleEl.textContent = "아쉽습니다! 오답입니다 💔";
-                explanationTextEl.textContent = currentQuiz.explanation;
-            }
-
-            explanationBoxEl.classList.remove("hidden");
-        }
-
-        nextBtnEl.onclick = () => {
-            currentQuestionIndex++;
-            if (currentQuestionIndex < quizData.length) {
-                loadQuestion();
-            } else {
-                showFinalResults();
-            }
-        };
-
-        function showFinalResults() {
-            stopTimer();
-
-            hideAllScreens();
-            resultScreen.classList.remove("hidden");
-            progressBarEl.style.width = "100%";
-
-            const now = new Date();
-            const dateStr = now.getFullYear() + "-" + 
-                String(now.getMonth() + 1).padStart(2, '0') + "-" + 
-                String(now.getDate()).padStart(2, '0') + " " + 
-                String(now.getHours()).padStart(2, '0') + ":" + 
-                String(now.getMinutes()).padStart(2, '0');
-
-            document.getElementById("final-emp-id").textContent = employeeId;
-            document.getElementById("final-emp-name").textContent = employeeName;
-            document.getElementById("final-elapsed-time").textContent = `${formatTime(totalElapsedSeconds)} (${totalElapsedSeconds}초)`;
-            document.getElementById("final-score").textContent = score;
-
-            const scoreGradeEl = document.getElementById("score-grade");
-            const finalEmojiEl = document.getElementById("final-emoji");
-            let gradeText = "";
-
-            if (score >= 90) {
-                finalEmojiEl.textContent = "🏆";
-                gradeText = "🥇 최우수 기관사 (철도안전 규정 완벽 숙지!)";
-                scoreGradeEl.className = "text-sm font-black text-emerald-700 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full inline-block mt-1";
-                triggerConfetti();
-            } else if (score >= 70) {
-                finalEmojiEl.textContent = "👍";
-                gradeText = "🥈 우수 기관사 (안전운행 자격 충분!)";
-                scoreGradeEl.className = "text-sm font-black text-indigo-700 bg-indigo-100 border border-indigo-300 px-3 py-1 rounded-full inline-block mt-1";
-            } else {
-                finalEmojiEl.textContent = "😅";
-                gradeText = "🥉 재복습 권장 (철도안전 규정을 다시 확인해주세요)";
-                scoreGradeEl.className = "text-sm font-black text-amber-800 bg-amber-100 border border-amber-300 px-3 py-1 rounded-full inline-block mt-1";
-            }
-            scoreGradeEl.textContent = gradeText;
-
-            // Save result to LocalStorage Admin Database
-            saveRecord({
-                id: Date.now(),
-                date: dateStr,
-                empId: employeeId,
-                empName: employeeName,
-                timeSec: totalElapsedSeconds,
-                formattedTime: formatTime(totalElapsedSeconds),
-                score: score,
-                grade: gradeText,
-                details: userAnswersLog
-            });
-
-            // Automatic Excel Export
-            setTimeout(() => {
-                exportToExcel();
-            }, 600);
-        }
-
-        function exportToExcel() {
-            if (typeof XLSX === 'undefined') {
-                alert("엑셀 다운로드 라이브러리를 불러오지 못했습니다.");
-                return;
-            }
-
-            const now = new Date();
-            const dateStr = now.getFullYear() + "-" + 
-                String(now.getMonth() + 1).padStart(2, '0') + "-" + 
-                String(now.getDate()).padStart(2, '0') + " " + 
-                String(now.getHours()).padStart(2, '0') + ":" + 
-                String(now.getMinutes()).padStart(2, '0');
-
-            const summaryData = [
-                ["철도안전 및 열차운행체계 기관사 평가 결과표"],
-                [""],
-                ["기관사 사번", employeeId],
-                ["기관사 성명", employeeName],
-                ["평가 일시", dateStr],
-                ["총 소요시간", `${formatTime(totalElapsedSeconds)} (${totalElapsedSeconds}초)`],
-                ["최종 점수", `${score} / 100점`],
-                ["합격/등급 판정", document.getElementById("score-grade").textContent],
-                [""],
-                ["문항 번호", "문제 내용", "제출한 답안", "정답 내용", "채점 결과"]
-            ];
-
-            userAnswersLog.forEach((item) => {
-                summaryData.push([
-                    `문제 ${item.questionNum}`,
-                    item.questionText,
-                    item.selectedOption,
-                    item.correctOption,
-                    item.isCorrect
-                ]);
-            });
-
-            const worksheet = XLSX.utils.aoa_to_sheet(summaryData);
-            worksheet['!cols'] = [
-                { wch: 12 },
-                { wch: 45 },
-                { wch: 35 },
-                { wch: 35 },
-                { wch: 12 }
-            ];
-
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "개별안전평가결과");
-
-            const fileName = `기관사_철도안전평가_${employeeId}_${employeeName}_${now.toISOString().slice(0,10)}.xlsx`;
-            XLSX.writeFile(workbook, fileName);
-        }
-
-        function exportAllToExcel() {
-            const records = getStoredRecords();
-            if (records.length === 0) {
-                alert("기록된 평가 데이터가 없습니다.");
-                return;
-            }
-
-            if (typeof XLSX === 'undefined') {
-                alert("엑셀 라이브러리를 불러오지 못했습니다.");
-                return;
-            }
-
-            const excelRows = [
-                ["일시", "사번", "성명", "소요시간", "점수", "등급 판정"]
-            ];
-
-            records.forEach(r => {
-                excelRows.push([
-                    r.date,
-                    r.empId,
-                    r.empName,
-                    r.formattedTime,
-                    r.score,
-                    r.grade
-                ]);
-            });
-
-            const worksheet = XLSX.utils.aoa_to_sheet(excelRows);
-            worksheet['!cols'] = [
-                { wch: 20 },
-                { wch: 15 },
-                { wch: 15 },
-                { wch: 15 },
-                { wch: 10 },
-                { wch: 35 }
-            ];
-
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "전체기관사평가현황");
-
-            const fileName = `전체기관사_안전평가현황_집계_${new Date().toISOString().slice(0,10)}.xlsx`;
-            XLSX.writeFile(workbook, fileName);
-        }
-
-        function openAdminModal() {
-            document.getElementById("admin-pass-input").value = "";
-            document.getElementById("admin-auth-modal").classList.remove("hidden");
-        }
-
-        function closeAdminModal() {
-            document.getElementById("admin-auth-modal").classList.add("hidden");
-        }
-
-        function verifyAdminPassword(event) {
-            event.preventDefault();
-            const pass = document.getElementById("admin-pass-input").value;
-            const currentPass = getAdminPassword();
-            if (pass === currentPass) {
-                closeAdminModal();
-                showAdminScreen();
-            } else {
-                alert("비밀번호가 일치하지 않습니다.");
-            }
-        }
-
-        function openChangePassModal() {
-            document.getElementById("curr-pass-input").value = "";
-            document.getElementById("new-pass-input").value = "";
-            document.getElementById("confirm-pass-input").value = "";
-            document.getElementById("admin-changepass-modal").classList.remove("hidden");
-        }
-
-        function closeChangePassModal() {
-            document.getElementById("admin-changepass-modal").classList.add("hidden");
-        }
-
-        function saveNewAdminPassword(event) {
-            event.preventDefault();
-            const currInput = document.getElementById("curr-pass-input").value;
-            const newPass = document.getElementById("new-pass-input").value.trim();
-            const confirmPass = document.getElementById("confirm-pass-input").value.trim();
-            const activePass = getAdminPassword();
-
-            if (currInput !== activePass) {
-                alert("현재 비밀번호가 일치하지 않습니다.");
-                return;
-            }
-
-            if (!newPass) {
-                alert("새 비밀번호를 입력해 주세요.");
-                return;
-            }
-
-            if (newPass !== confirmPass) {
-                alert("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
-                return;
-            }
-
-            setAdminPassword(newPass);
-            closeChangePassModal();
-            alert("관리자 비밀번호가 성공적으로 변경되었습니다!");
-        }
-
-        function showAdminScreen() {
-            stopTimer();
-            hideAllScreens();
-            adminScreen.classList.remove("hidden");
-            userInfoBadge.classList.add("hidden");
-            
-            updateAdminStats();
-            renderAdminTable();
-            renderAdminQuestions();
-        }
-
-        function closeAdminScreen() {
-            hideAllScreens();
-            loginScreen.classList.remove("hidden");
-        }
-
-        function hideAllScreens() {
-            loginScreen.classList.add("hidden");
-            quizScreen.classList.add("hidden");
-            resultScreen.classList.add("hidden");
-            adminScreen.classList.add("hidden");
-        }
-
-        function goHome() {
-            stopTimer();
-            hideAllScreens();
-            loginScreen.classList.remove("hidden");
-            userInfoBadge.classList.add("hidden");
-        }
-
-        function updateAdminStats() {
-            const records = getStoredRecords();
-            const totalCount = records.length;
-            
-            document.getElementById("admin-stat-total").textContent = `${totalCount}명`;
-            document.getElementById("record-count-badge").textContent = totalCount;
-
-            if (totalCount === 0) {
-                document.getElementById("admin-stat-avg").textContent = "0점";
-                document.getElementById("admin-stat-max").textContent = "0점";
-                document.getElementById("admin-stat-time").textContent = "00:00";
-                return;
-            }
-
-            const totalScore = records.reduce((sum, r) => sum + r.score, 0);
-            const avgScore = (totalScore / totalCount).toFixed(1);
-            const maxScore = Math.max(...records.map(r => r.score));
-            const totalTime = records.reduce((sum, r) => sum + (r.timeSec || 0), 0);
-            const avgTimeSec = Math.round(totalTime / totalCount);
-
-            document.getElementById("admin-stat-avg").textContent = `${avgScore}점`;
-            document.getElementById("admin-stat-max").textContent = `${maxScore}점`;
-            document.getElementById("admin-stat-time").textContent = formatTime(avgTimeSec);
-        }
-
-        function renderAdminTable() {
-            const records = getStoredRecords();
-            const searchKeyword = document.getElementById("admin-search-input").value.trim().toLowerCase();
-            const tbody = document.getElementById("admin-records-tbody");
-            tbody.innerHTML = "";
-
-            const filteredRecords = records.filter(r => 
-                r.empId.toLowerCase().includes(searchKeyword) || 
-                r.empName.toLowerCase().includes(searchKeyword)
-            );
-
-            if (filteredRecords.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="text-center p-8 text-slate-400 font-semibold">
-                            등록되었거나 검색 조건에 맞는 응시 기록이 없습니다.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            filteredRecords.forEach((r) => {
-                const tr = document.createElement("tr");
-                tr.className = "hover:bg-indigo-50/40 transition";
-                tr.innerHTML = `
-                    <td class="p-3.5 text-slate-500">${r.date}</td>
-                    <td class="p-3.5 font-bold text-indigo-900">${r.empId}</td>
-                    <td class="p-3.5 font-bold text-slate-900">${r.empName}</td>
-                    <td class="p-3.5 font-mono text-slate-600">${r.formattedTime || '00:00'}</td>
-                    <td class="p-3.5 font-black ${r.score >= 90 ? 'text-emerald-600' : r.score >= 70 ? 'text-indigo-600' : 'text-amber-600'}">${r.score}점</td>
-                    <td class="p-3.5 text-xs">${r.grade}</td>
-                    <td class="p-3.5 text-center">
-                        <button onclick="viewDetailModal(${r.id})" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-2.5 py-1 rounded-lg transition text-xs">
-                            <i class="fa-solid fa-magnifying-glass"></i> 상세
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function switchAdminTab(tabName) {
-            const recordsTab = document.getElementById("admin-tab-records");
-            const questionsTab = document.getElementById("admin-tab-questions");
-            const recordsBtn = document.getElementById("tab-records-btn");
-            const questionsBtn = document.getElementById("tab-questions-btn");
-
-            if (tabName === 'records') {
-                recordsTab.classList.remove("hidden");
-                questionsTab.classList.add("hidden");
-                recordsBtn.className = "py-2.5 px-4 font-extrabold text-sm border-b-2 border-indigo-600 text-indigo-700 flex items-center gap-2 transition";
-                questionsBtn.className = "py-2.5 px-4 font-extrabold text-sm text-slate-500 hover:text-slate-800 flex items-center gap-2 transition border-b-2 border-transparent";
-            } else {
-                recordsTab.classList.add("hidden");
-                questionsTab.classList.remove("hidden");
-                questionsBtn.className = "py-2.5 px-4 font-extrabold text-sm border-b-2 border-indigo-600 text-indigo-700 flex items-center gap-2 transition";
-                recordsBtn.className = "py-2.5 px-4 font-extrabold text-sm text-slate-500 hover:text-slate-800 flex items-center gap-2 transition border-b-2 border-transparent";
-            }
-        }
-
-        function renderAdminQuestions() {
-            const container = document.getElementById("admin-questions-list");
-            document.getElementById("question-count-badge").textContent = quizData.length;
-            container.innerHTML = "";
-
-            if (quizData.length === 0) {
-                container.innerHTML = `<div class="p-8 text-center text-slate-400 font-semibold bg-white rounded-xl border border-slate-200">등록된 문제 문제가 없습니다. '새 문제 추가' 또는 'JSON 불러오기'를 진행하세요.</div>`;
-                return;
-            }
-
-            quizData.forEach((q, idx) => {
-                const card = document.createElement("div");
-                card.className = "p-4 bg-white rounded-xl border border-slate-200/80 text-xs space-y-2 relative";
-                
-                let optionsHtml = q.options.map((opt, i) => `
-                    <div class="pl-2 ${i === q.answer ? 'font-bold text-emerald-700 bg-emerald-50 py-1 rounded' : 'text-slate-600'}">
-                        ${opt} ${i === q.answer ? '✅ [정답]' : ''}
-                    </div>
-                `).join("");
-
-                card.innerHTML = `
-                    <div class="flex justify-between items-center pr-20">
-                        <span class="font-extrabold text-indigo-600">문제 ${idx + 1}</span>
-                        <span class="bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded font-bold">${q.source || '자체 출제'}</span>
-                    </div>
-                    <div class="absolute top-3 right-3 flex items-center gap-1">
-                        <button onclick="editQuestionModal(${idx})" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-md transition text-[11px]">
-                            <i class="fa-solid fa-pen"></i> 수정
-                        </button>
-                        <button onclick="deleteQuestion(${idx})" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-md transition text-[11px]">
-                            <i class="fa-solid fa-trash"></i> 삭제
-                        </button>
-                    </div>
-                    <div class="font-bold text-slate-900 text-sm whitespace-pre-line">${q.question}</div>
-                    <div class="space-y-1 my-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">${optionsHtml}</div>
-                    <div class="text-slate-500 leading-relaxed bg-amber-50/60 p-2 rounded border border-amber-100"><strong class="text-amber-800">해설:</strong> ${q.explanation}</div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function openAddQuestionModal() {
-            document.getElementById("modal-question-index").value = "-1";
-            document.getElementById("modal-q-source").value = "";
-            document.getElementById("modal-q-title").value = "";
-            document.getElementById("modal-opt-0").value = "";
-            document.getElementById("modal-opt-1").value = "";
-            document.getElementById("modal-opt-2").value = "";
-            document.getElementById("modal-opt-3").value = "";
-            document.getElementById("modal-opt-4").value = "";
-            document.getElementById("modal-q-answer").value = "0";
-            document.getElementById("modal-q-explanation").value = "";
-
-            document.getElementById("question-modal-title").innerHTML = `<i class="fa-solid fa-plus text-indigo-600"></i> 새 문제 추가`;
-            document.getElementById("admin-question-modal").classList.remove("hidden");
-        }
-
-        function editQuestionModal(index) {
-            const q = quizData[index];
-            if (!q) return;
-
-            document.getElementById("modal-question-index").value = index;
-            document.getElementById("modal-q-source").value = q.source || "";
-            document.getElementById("modal-q-title").value = q.question || "";
-            document.getElementById("modal-opt-0").value = q.options[0] || "";
-            document.getElementById("modal-opt-1").value = q.options[1] || "";
-            document.getElementById("modal-opt-2").value = q.options[2] || "";
-            document.getElementById("modal-opt-3").value = q.options[3] || "";
-            document.getElementById("modal-opt-4").value = q.options[4] || "";
-            document.getElementById("modal-q-answer").value = q.answer;
-            document.getElementById("modal-q-explanation").value = q.explanation || "";
-
-            document.getElementById("question-modal-title").innerHTML = `<i class="fa-solid fa-pen-to-square text-indigo-600"></i> 문제 수정 (#${index + 1})`;
-            document.getElementById("admin-question-modal").classList.remove("hidden");
-        }
-
-        function closeQuestionModal() {
-            document.getElementById("admin-question-modal").classList.add("hidden");
-        }
-
-        function saveQuestionForm(event) {
-            event.preventDefault();
-            const idx = parseInt(document.getElementById("modal-question-index").value);
-
-            const newQ = {
-                id: idx >= 0 ? quizData[idx].id : Date.now(),
-                source: document.getElementById("modal-q-source").value.trim(),
-                question: document.getElementById("modal-q-title").value.trim(),
-                options: [
-                    document.getElementById("modal-opt-0").value.trim(),
-                    document.getElementById("modal-opt-1").value.trim(),
-                    document.getElementById("modal-opt-2").value.trim(),
-                    document.getElementById("modal-opt-3").value.trim(),
-                    document.getElementById("modal-opt-4").value.trim()
-                ],
-                answer: parseInt(document.getElementById("modal-q-answer").value),
-                explanation: document.getElementById("modal-q-explanation").value.trim()
-            };
-
-            if (idx >= 0) {
-                quizData[idx] = newQ;
-            } else {
-                quizData.push(newQ);
-            }
-
-            saveQuizData(quizData);
-            renderAdminQuestions();
-            closeQuestionModal();
-            alert(idx >= 0 ? "문제가 수정되었습니다." : "새 문제가 추가되었습니다.");
-        }
-
-        function deleteQuestion(index) {
-            if (confirm(`문제 #${index + 1} 번을 삭제하시겠습니까?`)) {
-                quizData.splice(index, 1);
-                saveQuizData(quizData);
-                renderAdminQuestions();
-            }
-        }
-
-        function exportQuestionsJSON() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(quizData, null, 2));
-            const dlAnchorElem = document.createElement('a');
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", `철도안전_문제은행_백업_${new Date().toISOString().slice(0,10)}.json`);
-            dlAnchorElem.click();
-        }
-
-        function importQuestionsJSON(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (Array.isArray(importedData) && importedData.length > 0) {
-                        if (confirm(`총 ${importedData.length}개의 문제를 불러와 현재 문제은행을 업데이트하시겠습니까?`)) {
-                            quizData = importedData;
-                            saveQuizData(quizData);
-                            renderAdminQuestions();
-                            alert("문제은행 업데이트가 성공적으로 완료되었습니다!");
-                        }
-                    } else {
-                        alert("유효한 문제 형식의 JSON 파일이 아닙니다.");
-                    }
-                } catch (err) {
-                    alert("JSON 파일 파싱 중 오류가 발생했습니다.");
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function resetQuestionsToDefault() {
-            if (confirm("문제은행을 초기 기본 10문제로 복원하시겠습니까? (기존 변경사항은 삭제됩니다)")) {
-                quizData = JSON.parse(JSON.stringify(defaultQuizData));
-                saveQuizData(quizData);
-                renderAdminQuestions();
-                alert("기본 문제로 복원되었습니다.");
-            }
-        }
-
-        function viewDetailModal(recordId) {
-            const records = getStoredRecords();
-            const record = records.find(r => r.id === recordId);
-            if (!record) return;
-
-            document.getElementById("detail-modal-summary").innerHTML = `
-                <div><span class="text-slate-400">사번:</span> <strong class="text-indigo-900">${record.empId}</strong></div>
-                <div><span class="text-slate-400">성명:</span> <strong class="text-emerald-900">${record.empName}</strong></div>
-                <div><span class="text-slate-400">점수:</span> <strong class="text-indigo-600">${record.score}점</strong></div>
-                <div><span class="text-slate-400">소요시간:</span> <strong class="text-amber-800">${record.formattedTime}</strong></div>
-            `;
-
-            const qContainer = document.getElementById("detail-modal-questions");
-            qContainer.innerHTML = "";
-
-            if (!record.details || record.details.length === 0) {
-                qContainer.innerHTML = `<div class="p-4 text-center text-slate-400">상세 답변 기록이 없습니다.</div>`;
-            } else {
-                record.details.forEach(item => {
-                    const isCorrect = item.isCorrect === "정답";
-                    const itemDiv = document.createElement("div");
-                    itemDiv.className = `p-3.5 rounded-xl border ${isCorrect ? 'bg-emerald-50/60 border-emerald-200' : 'bg-rose-50/60 border-rose-200'} space-y-1`;
-                    itemDiv.innerHTML = `
-                        <div class="flex justify-between items-center font-bold">
-                            <span class="${isCorrect ? 'text-emerald-800' : 'text-rose-800'}">문제 ${item.questionNum}. ${item.questionText}</span>
-                            <span class="px-2 py-0.5 rounded text-[11px] font-black ${isCorrect ? 'bg-emerald-200 text-emerald-900' : 'bg-rose-200 text-rose-900'}">${item.isCorrect}</span>
-                        </div>
-                        <div class="text-slate-700 pl-2">· 제출한 답: <span class="font-bold">${item.selectedOption}</span></div>
-                        ${!isCorrect ? `<div class="text-emerald-700 pl-2 font-bold">· 정답: ${item.correctOption}</div>` : ''}
-                    `;
-                    qContainer.appendChild(itemDiv);
-                });
-            }
-
-            document.getElementById("admin-detail-modal").classList.remove("hidden");
-        }
-
-        function closeDetailModal() {
-            document.getElementById("admin-detail-modal").classList.add("hidden");
-        }
-
-        function restartApp() {
-            stopTimer();
-            employeeId = "";
-            employeeName = "";
-            document.getElementById("employee-id-input").value = "";
-            document.getElementById("employee-name-input").value = "";
-            
-            hideAllScreens();
-            loginScreen.classList.remove("hidden");
-            userInfoBadge.classList.add("hidden");
-        }
-    </script>
+  </div>
+
+  <!-- Admin Modal -->
+  <div id="admin-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+      <div class="p-4 bg-indigo-900 text-white flex justify-between items-center">
+        <h3 class="font-bold text-sm flex items-center space-x-2">
+          <i class="fa-solid fa-user-shield"></i>
+          <span>관리자 대시보드</span>
+        </h3>
+        <div class="flex items-center space-x-2">
+          <button onclick="changeAdminPassPrompt()" class="text-xs bg-indigo-800 hover:bg-indigo-700 px-2.5 py-1 rounded">🔑 암호 변경</button>
+          <button onclick="closeAdminModal()" class="text-gray-300 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-6 text-xs">
+        <div class="grid grid-cols-4 gap-3">
+          <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+            <span class="text-gray-500">총 응시 건수</span>
+            <p id="adm-total" class="text-lg font-bold text-indigo-700">0건</p>
+          </div>
+          <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+            <span class="text-gray-500">평균 점수</span>
+            <p id="adm-avg" class="text-lg font-bold text-emerald-700">0점</p>
+          </div>
+          <div class="bg-purple-50 p-3 rounded-lg border border-purple-100">
+            <span class="text-gray-500">최고 점수</span>
+            <p id="adm-max" class="text-lg font-bold text-purple-700">0점</p>
+          </div>
+          <div class="bg-amber-50 p-3 rounded-lg border border-amber-100">
+            <span class="text-gray-500">평균 소요시간</span>
+            <p id="adm-time" class="text-lg font-bold text-amber-700">00:00</p>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center pt-2">
+          <h4 class="font-bold text-sm text-gray-800">응시자 기록 목록</h4>
+          <button onclick="exportAllExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded flex items-center space-x-1">
+            <i class="fa-solid fa-file-excel"></i>
+            <span>전체 기록 엑셀 내보내기</span>
+          </button>
+        </div>
+
+        <div class="border rounded-lg overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-100 text-gray-700 font-semibold">
+              <tr>
+                <th class="p-2 border-b">일시</th>
+                <th class="p-2 border-b">사번</th>
+                <th class="p-2 border-b">성명</th>
+                <th class="p-2 border-b">점수</th>
+                <th class="p-2 border-b">소요시간</th>
+              </tr>
+            </thead>
+            <tbody id="admin-records-body" class="divide-y text-gray-600">
+              <tr><td colspan="5" class="p-4 text-center text-gray-400">저장된 기록이 없습니다.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const defaultQuizData = [
+      { id: 1, source: "철도안전 평가", question: "다음 중 용어 정의로 틀린 것은?", options: ["“운행관리원”이라 함은 3호선 전동차에 승차하여 차내 승객안내 및 비상 시 열차운전 업무에 종사하는 직원을 말한다.", "“교번”이라 함은 기관사가 근무하여야 할 시간을 일정한 순서에 따르도록 지정한 것을 말한다.", "“철도차량”이라 함은 선로를 운행할 목적으로 제작된 동력차, 객차 및 특수차를 말한다.", "“역 순회요원”이라 함은 담당역에 상주하여 해당 역사를 순회하며 역구내 승객안내 및 설비 관리 등 역 운영에 관한 전반적인 안전관리를 담당하는 직원을 말한다.", "“차량기지”라 함은 차량의 정비, 검수 및 유치를 위한 장소를 말한다."], answer: 4, comment: "“역 순회요원”이라 함은 관리역별 담당구간의 각 역을 순회하면서 역구내 승객안내 및 설비 관리 등 역 운영에 관한 전반적인 안전관리를 담당하는 직원을 말합니다." },
+      { id: 2, source: "철도안전 평가", question: "다음 용어 중 설명이 틀린 것은?", options: ["“운전관제”라 함은 도시철도의 안전운행을 위하여 열차의 운행을 집중 제어·감시·통제하거나 각종 설비와 시스템 운용에 관한 지시와 통제를 담당하는 곳을 말한다.", "“폐색준용법”이라 함은 상용 또는 대용폐색방식의 시행이 불가능할 때 열차 또는 차량의 운전을 위하여 폐색방식에 준용하여 시행하는 운전보안방식을 말한다.", "“운전취급자”라 함은 차량기지 또는 운전취급역에서 열차 또는 차량운행에 필요한 신호 및 진로를 조작하는 자를 말한다.", "“작업자”라 함은 유지보수 및 점검 등을 위하여 지정된 현장에서 작업을 하는 자를 말한다.", "“감독자”라 함은 공사 직원으로서 시공사 및 용역업체의 직원을 지휘·감독하는 자를 말한다."], answer: 1, comment: "“철도관제”라 함은 도시철도의 안전운행을 위하여 열차의 운행을 집중 제어·감시·통제하거나 각종 설비와 시스템 운용에 관한 지시와 통제를 담당하는 곳을 말합니다." },
+      { id: 3, source: "철도안전 평가", question: "음주자에 대한 조치 기준으로 맞지 않는 것은?", options: ["0.02% ~ 0.1%미만 연 1회 확인된 때 : 당해 업무중지", "0.02% ~ 0.1%미만 연 2회 확인된 때 : 당해 업무중지 및 주의조치", "0.02% ~ 0.1%미만 연 3회 확인된 때 : 당해 업무중지 및 징계의뢰", "0.02%미만 : 정신교육(업무 전)", "0.1%이상 시 : 당해 업무중지 및 징계의뢰"], answer: 2, comment: "연 2회 확인된 때에는 당해 업무중지 및 '엄중경고' 조치에 해당합니다." },
+      { id: 4, source: "철도안전 평가", question: "다음은 직원에 대한 음주 제한 기준이다. 괄호 안에 들어갈 숫자로 맞게 짝지어진 것은?\n\n'직원에 대한 음주 제한의 기준은 혈중알콜농도 ( % )이상으로 하며, ( % )이상을 만취 상태로 본다.'", options: ["0.03, 0.1", "0.02, 0.05", "0.03, 0.9", "0.03, 0.5", "0.02, 0.1"], answer: 5, comment: "직원에 대한 음주 제한 기준은 혈중알콜농도 0.02% 이상이며, 0.1% 이상을 만취 상태로 봅니다." },
+      { id: 5, source: "철도안전 평가", question: "다음 중 인적오류 관리 방안으로 옳지 않은 것은?", options: ["지적확인환호 시행", "중점지도관리대상자 선정", "적성검사 정기 시행", "휴대전화 및 전자기기 사용제한", "승무적합성 검사 실시"], answer: 3, comment: "인적오류 관리 방안에는 교육, 승무 적합성검사, 중점지도관리대상자 선정, 지적확인환호, 휴대전화 제한, 졸음방지 독려활동 등이 포함됩니다." }
+    ];
+
+    let currentQuestions = [...defaultQuizData];
+    let userEmpId = "", userEmpName = "";
+    let currentIndex = 0, score = 0;
+    let userAnswers = [];
+    let timerInterval = null, secondsElapsed = 0;
+
+    function getAdminPass() {
+      return localStorage.getItem("rail_admin_pass") || "1234";
+    }
+
+    function startQuiz() {
+      const idInput = document.getElementById("emp-id").value.trim();
+      const nameInput = document.getElementById("emp-name").value.trim();
+      if (!idInput || !nameInput) {
+        alert("사번과 성명을 입력하세요.");
+        return;
+      }
+      userEmpId = idInput; userEmpName = nameInput;
+      document.getElementById("user-badge").innerText = `${userEmpName}(${userEmpId})`;
+      document.getElementById("start-screen").classList.add("hidden");
+      document.getElementById("quiz-screen").classList.remove("hidden");
+      startTimer();
+      renderQuestion();
+    }
+
+    function startTimer() {
+      secondsElapsed = 0;
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        const m = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+        const s = String(secondsElapsed % 60).padStart(2, '0');
+        document.getElementById("timer-text").innerText = `${m}:${s}`;
+      }, 1000);
+    }
+
+    function renderQuestion() {
+      const q = currentQuestions[currentIndex];
+      document.getElementById("q-source").innerText = q.source;
+      document.getElementById("q-title").innerText = `${currentIndex + 1}. ${q.question}`;
+      document.getElementById("quiz-progress-text").innerText = `문제 ${currentIndex + 1} / ${currentQuestions.length}`;
+      document.getElementById("progress-bar").style.width = `${((currentIndex + 1) / currentQuestions.length) * 100}%`;
+
+      const container = document.getElementById("options-container");
+      container.innerHTML = "";
+      document.getElementById("feedback-box").classList.add("hidden");
+      document.getElementById("next-btn").classList.add("hidden");
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "w-full text-left p-3.5 rounded-xl border border-gray-200 bg-white hover:bg-indigo-50/50 hover:border-indigo-200 transition text-xs font-medium leading-relaxed flex items-start space-x-2";
+        btn.innerHTML = `<span class="font-bold text-indigo-600">${idx + 1}.</span><span>${opt}</span>`;
+        btn.onclick = () => selectOption(idx + 1);
+        container.appendChild(btn);
+      });
+    }
+
+    function selectOption(selected) {
+      const q = currentQuestions[currentIndex];
+      const isCorrect = selected === q.answer;
+      if (isCorrect) score += 20;
+
+      userAnswers.push({ qId: q.id, question: q.question, selected, answer: q.answer, isCorrect });
+
+      const buttons = document.getElementById("options-container").children;
+      for (let i = 0; i < buttons.length; i++) {
+        buttons[i].disabled = true;
+        if (i + 1 === q.answer) buttons[i].classList.add("border-emerald-500", "bg-emerald-50", "text-emerald-900");
+        else if (i + 1 === selected && !isCorrect) buttons[i].classList.add("border-rose-500", "bg-rose-50", "text-rose-900");
+      }
+
+      const fbBox = document.getElementById("feedback-box");
+      const fbHeader = document.getElementById("feedback-header");
+      const fbDesc = document.getElementById("feedback-desc");
+      fbBox.classList.remove("hidden");
+
+      if (isCorrect) {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+        fbBox.className = "p-4 rounded-xl text-sm border bg-emerald-50 border-emerald-200 text-emerald-900 mt-4";
+        fbHeader.innerHTML = `<span>🎉 정답입니다!</span>`;
+      } else {
+        document.getElementById("question-card").classList.add("animate-shake");
+        setTimeout(() => document.getElementById("question-card").classList.remove("animate-shake"), 400);
+        fbBox.className = "p-4 rounded-xl text-sm border bg-rose-50 border-rose-200 text-rose-900 mt-4";
+        fbHeader.innerHTML = `<span>😅 오답입니다 (정답: ${q.answer}번)</span>`;
+      }
+      fbDesc.innerText = q.comment;
+      document.getElementById("next-btn").classList.remove("hidden");
+    }
+
+    function nextQuestion() {
+      currentIndex++;
+      if (currentIndex < currentQuestions.length) renderQuestion();
+      else finishQuiz();
+    }
+
+    function finishQuiz() {
+      clearInterval(timerInterval);
+      document.getElementById("quiz-screen").classList.add("hidden");
+      document.getElementById("result-screen").classList.remove("hidden");
+
+      const finalScore = Math.round((score / (currentQuestions.length * 20)) * 100);
+      document.getElementById("res-score").innerText = `${finalScore}점`;
+      document.getElementById("res-time").innerText = document.getElementById("timer-text").innerText;
+      document.getElementById("res-accuracy").innerText = `${Math.round((score / (currentQuestions.length * 20)) * 100)}%`;
+      document.getElementById("result-summary").innerText = `${userEmpName} 님, 수고하셨습니다.`;
+
+      saveRecord({ date: new Date().toLocaleString(), empId: userEmpId, name: userEmpName, score: finalScore, time: document.getElementById("timer-text").innerText });
+    }
+
+    function saveRecord(rec) {
+      const recs = JSON.parse(localStorage.getItem("rail_quiz_records") || "[]");
+      recs.push(rec);
+      localStorage.setItem("rail_quiz_records", JSON.stringify(recs));
+    }
+
+    function downloadExcel() {
+      const data = userAnswers.map((u, i) => ({
+        "사번": userEmpId, "성명": userEmpName, "문제번호": i + 1, "질문": u.question, "제출답안": u.selected, "정답": u.answer, "정답여부": u.isCorrect ? "O" : "X"
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "평가결과");
+      XLSX.writeFile(wb, `철도안전퀴즈_${userEmpId}_${userEmpName}.xlsx`);
+    }
+
+    /* Admin Functions */
+    function openAdminModal() {
+      document.getElementById("admin-pass-input").value = "";
+      document.getElementById("admin-auth-modal").classList.remove("hidden");
+    }
+    function closeAdminAuthModal() {
+      document.getElementById("admin-auth-modal").classList.add("hidden");
+    }
+    function verifyAdminPass() {
+      const input = document.getElementById("admin-pass-input").value;
+      if (input === getAdminPass()) {
+        closeAdminAuthModal();
+        renderAdminDashboard();
+        document.getElementById("admin-modal").classList.remove("hidden");
+      } else {
+        alert("비밀번호가 일치하지 않습니다.");
+      }
+    }
+    function closeAdminModal() {
+      document.getElementById("admin-modal").classList.add("hidden");
+    }
+    function changeAdminPassPrompt() {
+      const p = prompt("새 관리자 비밀번호를 입력하세요:");
+      if (p) {
+        localStorage.setItem("rail_admin_pass", p);
+        alert("비밀번호가 변경되었습니다.");
+      }
+    }
+    function renderAdminDashboard() {
+      const recs = JSON.parse(localStorage.getItem("rail_quiz_records") || "[]");
+      document.getElementById("adm-total").innerText = `${recs.length}건`;
+      if (recs.length > 0) {
+        const avg = Math.round(recs.reduce((a, b) => a + b.score, 0) / recs.length);
+        const max = Math.max(...recs.map(r => r.score));
+        document.getElementById("adm-avg").innerText = `${avg}점`;
+        document.getElementById("adm-max").innerText = `${max}점`;
+        document.getElementById("adm-time").innerText = recs[recs.length - 1].time;
+      }
+      const tbody = document.getElementById("admin-records-body");
+      tbody.innerHTML = recs.length === 0 ? `<tr><td colspan="5" class="p-4 text-center text-gray-400">저장된 기록이 없습니다.</td></tr>` :
+        recs.map(r => `<tr><td class="p-2 border-b">${r.date}</td><td class="p-2 border-b">${r.empId}</td><td class="p-2 border-b">${r.name}</td><td class="p-2 border-b font-bold">${r.score}점</td><td class="p-2 border-b">${r.time}</td></tr>`).join("");
+    }
+    function exportAllExcel() {
+      const recs = JSON.parse(localStorage.getItem("rail_quiz_records") || "[]");
+      if (recs.length === 0) return alert("내보낼 기록이 없습니다.");
+      const ws = XLSX.utils.json_to_sheet(recs);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "전체응시기록");
+      XLSX.writeFile(wb, `관제사_철도안전퀴즈_전체기록.xlsx`);
+    }
+  </script>
 </body>
 </html>
-```eod
-
-```
-
----
-
-### 🛠️ 문제 해결 완료 안내
-
-1. **비밀번호 모달(`admin-auth-modal`) 요소 복원**:
-   - 관리자 인증에 필수적인 비밀번호 입력 모달창 HTML 요소가 누락되어 있던 문제를 완전히 해결했습니다.
-2. **단일 완성 파일 제공**:
-   - 전체 자바스크립트 함수 및 HTML 구조를 포함한 실행 가능한 코드 파일이 완성되었습니다.
-
-#### 🔑 진입 순서 재확인:
-- 오른쪽 상단 **[관리자 모드]** 버튼을 클릭합니다.
-- 비밀번호 입력창에 **`1234`** *(초기 비밀번호)*를 입력합니다.
-- 정상적으로 관리자 화면으로 진입하여 **응시자 이력 조회, 엑셀 추출, 암호 변경 및 문제 은행 관리**를 진행하실 수 있습니다!
