@@ -51,11 +51,11 @@
       <div class="max-w-xs mx-auto space-y-4 text-left">
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">사번</label>
-          <input type="text" id="emp-id" placeholder="예: 20260101" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+          <input type="text" id="emp-id" placeholder="예: 20260101" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 text-sm">
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">성명</label>
-          <input type="text" id="emp-name" placeholder="예: 홍길동" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+          <input type="text" id="emp-name" placeholder="예: 홍길동" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 text-sm">
         </div>
         <button onclick="startQuiz()" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition text-sm">
           퀴즈 시작하기 🚀
@@ -226,19 +226,12 @@
           <div class="flex space-x-2">
             <button onclick="openQuestionForm()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded flex items-center space-x-1">
               <i class="fa-solid fa-plus"></i>
-              <span>새 문제 추가</span>
+              <span>+ 새 문제 직접 추가</span>
             </button>
             <label class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded cursor-pointer flex items-center space-x-1">
               <i class="fa-solid fa-file-excel"></i>
-              <span>엑셀 불러오기</span>
+              <span>📊 엑셀/CSV 파일로 불러오기</span>
               <input type="file" id="excel-upload-input" class="hidden" accept=".xlsx, .xls, .csv" onchange="importQuestionsExcel(event)">
-            </label>
-            <button onclick="exportQuestionsJSON()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1.5 rounded">
-              JSON 백업
-            </button>
-            <label class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded cursor-pointer">
-              JSON 불러오기
-              <input type="file" id="json-upload-input" class="hidden" accept=".json" onchange="importQuestionsJSON(event)">
             </label>
             <button onclick="resetDefaultQuestions()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold px-3 py-1.5 rounded">
               기본값 초기화
@@ -260,7 +253,7 @@
       
       <div>
         <label class="block font-bold text-gray-700 mb-1">출처 / 구분</label>
-        <input type="text" id="form-q-source" placeholder="예: 철도안전 평가 P.75" class="w-full p-2 border rounded">
+        <input type="text" id="form-q-source" placeholder="예: 철도안전 규정 P.75" class="w-full p-2 border rounded">
       </div>
 
       <div>
@@ -274,7 +267,7 @@
         <input type="text" id="form-q-opt2" placeholder="2번 보기" class="w-full p-2 border rounded">
         <input type="text" id="form-q-opt3" placeholder="3번 보기" class="w-full p-2 border rounded">
         <input type="text" id="form-q-opt4" placeholder="4번 보기" class="w-full p-2 border rounded">
-        <input type="text" id="form-q-opt5" placeholder="5번 보기" class="w-full p-2 border rounded">
+        <input type="text" id="form-q-opt5" placeholder="5번 보기 (선택)" class="w-full p-2 border rounded">
       </div>
 
       <div>
@@ -517,7 +510,7 @@
       document.getElementById("q-count-badge").innerText = qs.length;
       const container = document.getElementById("q-list-container");
       if (qs.length === 0) {
-        container.innerHTML = `<p class="p-8 text-center text-gray-400 border rounded-lg">등록된 문제가 없습니다.</p>`;
+        container.innerHTML = `<p class="p-8 text-center text-gray-400 border rounded-lg">등록된 문제가 없습니다. 새로운 문제를 등록해 보세요.</p>`;
         return;
       }
       container.innerHTML = qs.map((q, idx) => `
@@ -602,40 +595,12 @@
     }
 
     function resetDefaultQuestions() {
-      if (!confirm("모든 맞춤형 문제를 삭제하고 기본 문제 세트로 초기화하시겠습니까?")) return;
+      if (!confirm("모든 문제 데이터를 기본 문제 세트로 초기화하시겠습니까?")) return;
       saveQuizQuestions(defaultQuizData);
       renderQuestionList();
     }
 
-    function exportQuestionsJSON() {
-      const qs = loadQuizQuestions();
-      const blob = new Blob([JSON.stringify(qs, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "관제사_안전퀴즈_문제은행.json";
-      a.click();
-    }
-
-    function importQuestionsJSON(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        try {
-          const qs = JSON.parse(evt.target.result);
-          if (Array.isArray(qs)) {
-            saveQuizQuestions(qs);
-            renderQuestionList();
-            alert("문제 등록이 완료되었습니다.");
-          } else alert("올바른 JSON 형식이 아닙니다.");
-        } catch (err) {
-          alert("파일 읽기 오류가 발생했습니다.");
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    /* 엑셀 파일 불러오기 기능 */
+    /* 엑셀/CSV 불러오기 유연한 파싱 로직 */
     function importQuestionsExcel(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -647,42 +612,49 @@
           const workbook = XLSX.read(data, { type: 'array' });
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
-          const jsonRows = XLSX.utils.sheet_to_json(worksheet);
+          const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
           if (jsonRows.length === 0) {
-            alert("엑셀 파일에 데이터가 없습니다.");
+            alert("파일에 읽을 데이터가 없습니다.");
             return;
           }
 
           const newQuestions = jsonRows.map((row, index) => {
+            // 유연한 열 이름 매핑
+            const source = row["출처"] || row["구분"] || row["Source"] || "안전 규정";
+            const question = row["질문"] || row["문제"] || row["Question"] || "";
             const options = [
-              row["보기1"] || row["보기 1"] || "",
-              row["보기2"] || row["보기 2"] || "",
-              row["보기3"] || row["보기 3"] || "",
-              row["보기4"] || row["보기 4"] || "",
-              row["보기5"] || row["보기 5"] || ""
-            ].filter(Boolean);
+              row["보기1"] || row["보기 1"] || row["option1"] || "",
+              row["보기2"] || row["보기 2"] || row["option2"] || "",
+              row["보기3"] || row["보기 3"] || row["option3"] || "",
+              row["보기4"] || row["보기 4"] || row["option4"] || "",
+              row["보기5"] || row["보기 5"] || row["option5"] || ""
+            ].map(v => String(v).trim()).filter(Boolean);
+
+            const answer = Number(row["정답"] || row["Answer"] || 1);
+            const comment = String(row["해설"] || row["Comment"] || "").trim();
 
             return {
               id: Date.now() + index,
-              source: row["출처"] || "엑셀 업로드",
-              question: row["질문"] || row["문제"] || "",
-              options: options,
-              answer: Number(row["정답"]) || 1,
-              comment: row["해설"] || ""
+              source,
+              question,
+              options,
+              answer,
+              comment
             };
           }).filter(q => q.question && q.options.length >= 2);
 
           if (newQuestions.length === 0) {
-            alert("올바른 문제 형식을 찾을 수 없습니다. 컬럼명(질문, 보기1~5, 정답, 해설)을 확인해 주세요.");
+            alert("올바른 문제 형식을 찾지 못했습니다.\n엑셀 1행의 항목 이름이 '질문, 보기1, 보기2, 보기3, 보기4, 정답, 해설'로 되어 있는지 확인해 주세요.");
             return;
           }
 
           saveQuizQuestions(newQuestions);
           renderQuestionList();
-          alert(`${newQuestions.length}개의 문제가 엑셀 파일에서 성공적으로 등록되었습니다! 🎉`);
+          alert(`${newQuestions.length}개의 문제가 성공적으로 업데이트되었습니다! 🎉`);
+          e.target.value = ""; // 파일 입력 초기화
         } catch (err) {
-          alert("엑셀 파일을 읽는 중 오류가 발생했습니다.");
+          alert("파일을 처리하는 중 오류가 발생했습니다.");
           console.error(err);
         }
       };
