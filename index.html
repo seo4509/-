@@ -106,6 +106,7 @@
       <div>
         <h2 class="text-2xl font-bold text-gray-900">퀴즈가 완료되었습니다!</h2>
         <p class="text-sm text-gray-600 mt-1" id="result-summary"></p>
+        <p id="server-status-text" class="text-xs text-indigo-600 mt-2 font-medium">☁️ 중앙 서버로 성적 제출 중...</p>
       </div>
 
       <div class="grid grid-cols-3 gap-3 max-w-md mx-auto">
@@ -126,7 +127,7 @@
       <div class="pt-2 flex justify-center space-x-3">
         <button onclick="downloadExcel()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm shadow transition flex items-center space-x-1.5">
           <i class="fa-solid fa-file-excel"></i>
-          <span>결과 엑셀 저장</span>
+          <span>내 결과 엑셀 저장</span>
         </button>
         <button onclick="location.reload()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm shadow transition">
           다시 풀기
@@ -168,7 +169,7 @@
 
       <!-- Admin Tabs -->
       <div class="flex border-b bg-gray-50 text-xs font-bold text-gray-600">
-        <button id="tab-btn-records" onclick="switchAdminTab('records')" class="px-5 py-3 border-b-2 border-indigo-600 text-indigo-600 font-bold">응시자 성적 기록</button>
+        <button id="tab-btn-records" onclick="switchAdminTab('records')" class="px-5 py-3 border-b-2 border-indigo-600 text-indigo-600 font-bold">응시자 성적 기록 (로컬)</button>
         <button id="tab-btn-questions" onclick="switchAdminTab('questions')" class="px-5 py-3 border-b-2 border-transparent hover:text-indigo-600">문제 은행 관리 및 업데이트</button>
       </div>
 
@@ -194,10 +195,10 @@
         </div>
 
         <div class="flex justify-between items-center pt-2">
-          <h4 class="font-bold text-sm text-gray-800">응시자 기록 목록</h4>
+          <h4 class="font-bold text-sm text-gray-800">이 기기 응시 기록 목록</h4>
           <button onclick="exportAllExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded flex items-center space-x-1">
             <i class="fa-solid fa-file-excel"></i>
-            <span>전체 기록 엑셀 내보내기</span>
+            <span>로컬 기록 엑셀 내보내기</span>
           </button>
         </div>
 
@@ -288,6 +289,9 @@
   </div>
 
   <script>
+    /* ⭐ 1단계에서 발급받은 구글 웹 앱 URL 주소를 아래에 넣어주세요 */
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJeiY1v21PqVnCcxUoq3RV6M1156B5wGPkXXqxAvdr6X8WDEqJkF_ePzdzuhr26olPRQ/exec";
+
     const defaultQuizData = [
       { id: 1, source: "철도안전 평가", question: "다음 중 용어 정의로 틀린 것은?", options: ["“운행관리원”이라 함은 3호선 전동차에 승차하여 차내 승객안내 및 비상 시 열차운전 업무에 종사하는 직원을 말한다.", "“교번”이라 함은 기관사가 근무하여야 할 시간을 일정한 순서에 따르도록 지정한 것을 말한다.", "“철도차량”이라 함은 선로를 운행할 목적으로 제작된 동력차, 객차 및 특수차를 말한다.", "“역 순회요원”이라 함은 담당역에 상주하여 해당 역사를 순회하며 역구내 승객안내 및 설비 관리 등 역 운영에 관한 전반적인 안전관리를 담당하는 직원을 말한다.", "“차량기지”라 함은 차량의 정비, 검수 및 유치를 위한 장소를 말한다."], answer: 4, comment: "“역 순회요원”이라 함은 관리역별 담당구간의 각 역을 순회하면서 역구내 승객안내 및 설비 관리 등 역 운영에 관한 전반적인 안전관리를 담당하는 직원을 말합니다." },
       { id: 2, source: "철도안전 평가", question: "다음 용어 중 설명이 틀린 것은?", options: ["“운전관제”라 함은 도시철도의 안전운행을 위하여 열차의 운행을 집중 제어·감시·통제하거나 각종 설비와 시스템 운용에 관한 지시와 통제를 담당하는 곳을 말한다.", "“폐색준용법”이라 함은 상용 또는 대용폐색방식의 시행이 불가능할 때 열차 또는 차량의 운전을 위하여 폐색방식에 준용하여 시행하는 운전보안방식을 말한다.", "“운전취급자”라 함은 차량기지 또는 운전취급역에서 열차 또는 차량운행에 필요한 신호 및 진로를 조작하는 자를 말한다.", "“작업자”라 함은 유지보수 및 점검 등을 위하여 지정된 현장에서 작업을 하는 자를 말한다.", "“감독자”라 함은 공사 직원으로서 시공사 및 용역업체의 직원을 지휘·감독하는 자를 말한다."], answer: 1, comment: "“철도관제”라 함은 도시철도의 안전운행을 위하여 열차의 운행을 집중 제어·감시·통제하거나 각종 설비와 시스템 운용에 관한 지시와 통제를 담당하는 곳을 말합니다." },
@@ -412,18 +416,51 @@
       document.getElementById("result-screen").classList.remove("hidden");
 
       const finalScore = Math.round(score);
+      const timeTaken = document.getElementById("timer-text").innerText;
       document.getElementById("res-score").innerText = `${finalScore}점`;
-      document.getElementById("res-time").innerText = document.getElementById("timer-text").innerText;
+      document.getElementById("res-time").innerText = timeTaken;
       document.getElementById("res-accuracy").innerText = `${finalScore}%`;
       document.getElementById("result-summary").innerText = `${userEmpName} 님, 수고하셨습니다.`;
 
-      saveRecord({ date: new Date().toLocaleString(), empId: userEmpId, name: userEmpName, score: finalScore, time: document.getElementById("timer-text").innerText });
+      const record = {
+        date: new Date().toLocaleString(),
+        empId: userEmpId,
+        name: userEmpName,
+        score: finalScore,
+        time: timeTaken
+      };
+
+      saveRecord(record);
+      sendToGoogleSheet(record);
     }
 
     function saveRecord(rec) {
       const recs = JSON.parse(localStorage.getItem("rail_quiz_records") || "[]");
       recs.push(rec);
       localStorage.setItem("rail_quiz_records", JSON.stringify(recs));
+    }
+
+    /* 🌐 구글 스프레드시트로 실시간 전송 */
+    function sendToGoogleSheet(rec) {
+      const statusText = document.getElementById("server-status-text");
+      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("여기에_구글")) {
+        if(statusText) statusText.innerText = "ℹ️ 구글 스프레드시트 연동 전입니다. (로컬 저장만 완료)";
+        return;
+      }
+
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rec)
+      })
+      .then(() => {
+        if(statusText) statusText.innerText = "✅ 관리자 구글 스프레드시트로 제출이 완료되었습니다!";
+      })
+      .catch(err => {
+        console.error("전송 오류:", err);
+        if(statusText) statusText.innerText = "⚠️ 중앙 서버 전송 실패 (로컬 기기 저장은 완료되었습니다)";
+      });
     }
 
     function downloadExcel() {
@@ -510,7 +547,7 @@
       document.getElementById("q-count-badge").innerText = qs.length;
       const container = document.getElementById("q-list-container");
       if (qs.length === 0) {
-        container.innerHTML = `<p class="p-8 text-center text-gray-400 border rounded-lg">등록된 문제가 없습니다. 새로운 문제를 등록해 보세요.</p>`;
+        container.innerHTML = `<p class="p-8 text-center text-gray-400 border rounded-lg">등록된 문제가 없습니다.</p>`;
         return;
       }
       container.innerHTML = qs.map((q, idx) => `
@@ -595,12 +632,11 @@
     }
 
     function resetDefaultQuestions() {
-      if (!confirm("모든 문제 데이터를 기본 문제 세트로 초기화하시겠습니까?")) return;
+      if (!confirm("모든 문제를 기본 문제 세트로 초기화하시겠습니까?")) return;
       saveQuizQuestions(defaultQuizData);
       renderQuestionList();
     }
 
-    /* 엑셀/CSV 불러오기 유연한 파싱 로직 */
     function importQuestionsExcel(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -614,48 +650,33 @@
           const worksheet = workbook.Sheets[firstSheetName];
           const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
-          if (jsonRows.length === 0) {
-            alert("파일에 읽을 데이터가 없습니다.");
-            return;
-          }
+          if (jsonRows.length === 0) return alert("파일에 데이터가 없습니다.");
 
           const newQuestions = jsonRows.map((row, index) => {
-            // 유연한 열 이름 매핑
-            const source = row["출처"] || row["구분"] || row["Source"] || "안전 규정";
-            const question = row["질문"] || row["문제"] || row["Question"] || "";
+            const source = row["출처"] || row["구분"] || "안전 규정";
+            const question = row["질문"] || row["문제"] || "";
             const options = [
-              row["보기1"] || row["보기 1"] || row["option1"] || "",
-              row["보기2"] || row["보기 2"] || row["option2"] || "",
-              row["보기3"] || row["보기 3"] || row["option3"] || "",
-              row["보기4"] || row["보기 4"] || row["option4"] || "",
-              row["보기5"] || row["보기 5"] || row["option5"] || ""
+              row["보기1"] || row["보기 1"] || "",
+              row["보기2"] || row["보기 2"] || "",
+              row["보기3"] || row["보기 3"] || "",
+              row["보기4"] || row["보기 4"] || "",
+              row["보기5"] || row["보기 5"] || ""
             ].map(v => String(v).trim()).filter(Boolean);
 
-            const answer = Number(row["정답"] || row["Answer"] || 1);
-            const comment = String(row["해설"] || row["Comment"] || "").trim();
+            const answer = Number(row["정답"] || 1);
+            const comment = String(row["해설"] || "").trim();
 
-            return {
-              id: Date.now() + index,
-              source,
-              question,
-              options,
-              answer,
-              comment
-            };
+            return { id: Date.now() + index, source, question, options, answer, comment };
           }).filter(q => q.question && q.options.length >= 2);
 
-          if (newQuestions.length === 0) {
-            alert("올바른 문제 형식을 찾지 못했습니다.\n엑셀 1행의 항목 이름이 '질문, 보기1, 보기2, 보기3, 보기4, 정답, 해설'로 되어 있는지 확인해 주세요.");
-            return;
-          }
+          if (newQuestions.length === 0) return alert("올바른 문제 형식을 찾지 못했습니다.");
 
           saveQuizQuestions(newQuestions);
           renderQuestionList();
-          alert(`${newQuestions.length}개의 문제가 성공적으로 업데이트되었습니다! 🎉`);
-          e.target.value = ""; // 파일 입력 초기화
+          alert(`${newQuestions.length}개의 문제가 성공적으로 등록되었습니다!`);
+          e.target.value = "";
         } catch (err) {
-          alert("파일을 처리하는 중 오류가 발생했습니다.");
-          console.error(err);
+          alert("파일 읽기 오류가 발생했습니다.");
         }
       };
       reader.readAsArrayBuffer(file);
